@@ -69,7 +69,7 @@ export function SignInForm({ googleEnabled }: { googleEnabled: boolean }) {
       <p className="text-muted-foreground mt-6 text-center text-sm">
         Novo por aqui?{" "}
         <Link href={next === "/inicio" ? "/criar-conta" : `/criar-conta?next=${encodeURIComponent(next)}`} className="text-foreground font-semibold underline-offset-4 hover:underline">
-          Criar conta grátis
+          Criar conta
         </Link>
       </p>
     </>

@@ -4,27 +4,28 @@ import { cn } from "cn"
 import { Slot } from "radix-ui"
 
 const buttonVariants = cva(
-  "inline-flex shrink-0 items-center justify-center gap-2 rounded-xl text-sm font-semibold whitespace-nowrap transition-[background-color,color,box-shadow,transform] duration-150 active:scale-[0.98] outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
+  "inline-flex shrink-0 items-center justify-center gap-2 rounded-2xl font-display text-[15px] font-extrabold tracking-[0.01em] whitespace-nowrap transition-[background-color,color,box-shadow,transform,filter] duration-100 outline-none select-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
   {
     variants: {
       variant: {
-        default: "bg-primary text-primary-foreground hover:bg-primary/90",
-        mint: "bg-mint text-mint-foreground hover:bg-mint/85",
+        // Botões "de tecla": sombra sólida embaixo que some ao pressionar.
+        default: "bg-primary text-primary-foreground shadow-[0_4px_0_var(--primary-edge)] hover:brightness-105 active:translate-y-[3px] active:shadow-[0_1px_0_var(--primary-edge)]",
+        mint: "bg-mint text-mint-foreground shadow-[0_4px_0_var(--primary-edge)] hover:brightness-105 active:translate-y-[3px] active:shadow-[0_1px_0_var(--primary-edge)]",
         destructive:
-          "bg-destructive text-white hover:bg-destructive/90 focus-visible:ring-destructive/20 dark:bg-destructive/60 dark:focus-visible:ring-destructive/40",
+          "bg-destructive text-white shadow-[0_4px_0_var(--destructive-edge)] hover:brightness-105 active:translate-y-[3px] active:shadow-[0_1px_0_var(--destructive-edge)] focus-visible:ring-destructive/20 dark:text-[#2a0f0b] dark:focus-visible:ring-destructive/40",
         outline:
-          "border bg-card shadow-xs hover:bg-accent hover:text-accent-foreground dark:border-input dark:bg-input/30 dark:hover:bg-input/50",
+          "border-2 bg-card shadow-[0_4px_0_var(--edge)] hover:bg-accent hover:text-accent-foreground active:translate-y-[3px] active:shadow-[0_1px_0_var(--edge)] dark:border-input",
         secondary:
-          "bg-secondary text-secondary-foreground hover:bg-secondary/80",
+          "bg-secondary text-secondary-foreground hover:brightness-[0.98] active:translate-y-px",
         ghost:
-          "hover:bg-accent hover:text-accent-foreground dark:hover:bg-accent/50",
+          "font-bold hover:bg-accent hover:text-accent-foreground dark:hover:bg-accent/50",
         link: "text-primary underline-offset-4 hover:underline",
       },
       size: {
-        default: "h-11 px-5 has-[>svg]:px-4",
-        xs: "h-6 gap-1 rounded-md px-2 text-xs has-[>svg]:px-1.5 [&_svg:not([class*='size-'])]:size-3",
-        sm: "h-9 gap-1.5 rounded-lg px-3.5 has-[>svg]:px-3",
-        lg: "h-13 rounded-2xl px-7 text-base has-[>svg]:px-5",
+        default: "h-12 px-5 has-[>svg]:px-4",
+        xs: "h-6 gap-1 rounded-md px-2 text-xs shadow-none has-[>svg]:px-1.5 [&_svg:not([class*='size-'])]:size-3",
+        sm: "h-9 gap-1.5 rounded-xl px-3.5 text-sm has-[>svg]:px-3",
+        lg: "h-14 rounded-[18px] px-7 text-base has-[>svg]:px-5",
         icon: "size-11",
         "icon-xs": "size-6 rounded-md [&_svg:not([class*='size-'])]:size-3",
         "icon-sm": "size-9 rounded-lg",

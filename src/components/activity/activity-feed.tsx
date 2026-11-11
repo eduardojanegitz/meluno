@@ -10,10 +10,11 @@ type Feed = Awaited<ReturnType<typeof listActivity>>;
 
 export function ActivityFeed({ feed, showGroup = true, emptyText }: { feed: Feed; showGroup?: boolean; emptyText?: string }) {
   if (feed.items.length === 0) {
-    return <EmptyState icon={History} title="Nada por aqui ainda" description={emptyText ?? "As alterações nos seus grupos aparecem aqui."} />;
+    return <EmptyState icon={History} title="Tudo quietinho"
+        mood="sleeping" description={emptyText ?? "As alterações nos seus grupos aparecem aqui."} />;
   }
   return (
-    <ul className="bg-card divide-y rounded-2xl border px-4">
+    <ul className="bg-card divide-y rounded-2xl border shadow-card px-4">
       {feed.items.map((item) => {
         const actorName = item.isViewer ? "Você" : (item.actor?.displayName ?? "Alguém");
         const href =

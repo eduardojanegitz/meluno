@@ -62,7 +62,7 @@ function Section({ id, title, description, children }: { id: string; title: stri
 
 function Swatch({ name, hex, className, note }: { name: string; hex: string; className: string; note?: string }) {
   return (
-    <div className="bg-card overflow-hidden rounded-2xl border">
+    <div className="bg-card overflow-hidden rounded-2xl border shadow-card">
       <div className={`h-20 ${className}`} />
       <div className="p-3">
         <p className="text-sm font-semibold">{name}</p>
@@ -223,7 +223,7 @@ export function DesignShowcase() {
             <Button disabled>Desabilitado</Button>
           </div>
           <div className="mt-4 flex flex-wrap items-center gap-3">
-            <Button size="lg">Criar conta grátis</Button>
+            <Button size="lg">Criar conta</Button>
             <Button size="sm" variant="outline">
               Pequeno
             </Button>
@@ -355,14 +355,14 @@ export function DesignShowcase() {
               <GroupCard name="Churrasco de sábado" category="EVENT" memberCount={8} balanceMinor={0} lastActivityAt={daysAgo(12)} now={NOW} />
               <GroupCard name="Nós dois" category="COUPLE" memberCount={2} balanceMinor={0} lastActivityAt={null} now={NOW} />
             </div>
-            <div className="bg-card divide-y rounded-2xl border px-4">
+            <div className="bg-card divide-y rounded-2xl border shadow-card px-4">
               <ExpenseRow description="Supermercado" category="GROCERIES" totalMinor={24000} paidByLabel="Você pagou" userImpactMinor={16000} dateLabel="hoje" />
               <ExpenseRow description="Uber para a rodoviária" category="TRANSPORT" totalMinor={4590} paidByLabel="Maria pagou" userImpactMinor={-1530} dateLabel="ontem" />
               <ExpenseRow description="Ingressos do show" category="EVENTS" totalMinor={36000} paidByLabel="Pedro pagou" userImpactMinor={0} dateLabel="8 de nov." />
               <ExpenseRow description="Conta de luz" category="UTILITIES" totalMinor={18733} paidByLabel="2 pessoas pagaram" userImpactMinor={-6244} dateLabel="3 de nov." />
             </div>
           </div>
-          <div className="bg-card mt-6 divide-y rounded-2xl border px-4">
+          <div className="bg-card mt-6 divide-y rounded-2xl border shadow-card px-4">
             <ActivityItem actorName="João Pedro" actorId="m1" kind="expense_created" context="Viagem para Ubatuba" timeLabel="há 5 min">
               adicionou <strong className="font-semibold">Supermercado</strong> · <Money amountMinor={24000} />
             </ActivityItem>
@@ -411,7 +411,7 @@ export function DesignShowcase() {
             </div>
             {loading ? (
               [0, 1].map((i) => (
-                <div key={i} className="bg-card flex items-center gap-3.5 rounded-2xl border p-3.5">
+                <div key={i} className="bg-card flex items-center gap-3.5 rounded-2xl border shadow-card p-3.5">
                   <Skeleton className="size-12 rounded-2xl" />
                   <div className="flex-1 space-y-2">
                     <Skeleton className="h-4 w-40" />

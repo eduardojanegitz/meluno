@@ -31,14 +31,14 @@ async function Pending() {
   if (invitations.length === 0) {
     return (
       <div className="bg-card rounded-3xl border">
-        <EmptyState icon={MailOpen} title="Nenhum convite pendente" description="Quando alguém convidar você para um grupo, ele aparece aqui." />
+        <EmptyState icon={MailOpen} title="Nenhum convite por enquanto" mood="sleeping" description="Quando alguém te chamar pra um grupo, o convite aparece aqui." />
       </div>
     );
   }
   return (
     <ul className="space-y-3">
       {invitations.map((inv) => (
-        <li key={inv.id} className="bg-card rounded-2xl border p-4">
+        <li key={inv.id} className="bg-card rounded-2xl border shadow-card p-4">
           <div className="flex items-center gap-3">
             <GroupIcon category={inv.group.category} />
             <div className="min-w-0">

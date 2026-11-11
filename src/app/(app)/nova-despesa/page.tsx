@@ -49,7 +49,7 @@ async function Picker({ searchParams }: { searchParams: PageProps<"/nova-despesa
             <EmptyState
               icon={Users}
               title="Primeiro, um grupo"
-              description="Despesas sempre pertencem a um grupo — mesmo que sejam só duas pessoas."
+              description="Toda despesa mora num grupo, mesmo que sejam só duas pessoas."
               action={
                 <Button asChild>
                   <Link href="/grupos/novo">

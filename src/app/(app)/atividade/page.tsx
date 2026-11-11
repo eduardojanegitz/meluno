@@ -63,7 +63,7 @@ async function Feed() {
       {recent.length > 0 ? (
         <section>
           <SectionTitle>Para você</SectionTitle>
-          <ul className="bg-card divide-y rounded-2xl border">
+          <ul className="bg-card divide-y rounded-2xl border shadow-card">
             {recent.map((n) => (
               <li key={n.id}>
                 <Link

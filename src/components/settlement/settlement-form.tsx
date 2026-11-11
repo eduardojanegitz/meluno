@@ -44,7 +44,7 @@ function MemberSelect({ id, label, value, onChange, members, viewerMemberId, exc
 }) {
   const selected = members.find((m) => m.id === value);
   return (
-    <div className="bg-card flex items-center gap-3 rounded-2xl border px-4 py-3">
+    <div className="bg-card flex items-center gap-3 rounded-2xl border shadow-card px-4 py-3">
       {selected ? <MemberAvatar name={selected.name} colorKey={selected.id} imageUrl={selected.imageUrl} /> : null}
       <div className="min-w-0 flex-1">
         <Label htmlFor={id} className="text-muted-foreground text-xs font-normal">
@@ -150,7 +150,7 @@ function SettlementFormInner({ group, members, viewerMemberId, initial, onSaved 
       </div>
 
       {method === "PIX" && receiver && to !== viewerMemberId ? (
-        <section className="bg-card rounded-2xl border p-4" aria-labelledby="pix-title">
+        <section className="bg-card rounded-2xl border shadow-card p-4" aria-labelledby="pix-title">
           <h2 id="pix-title" className="text-sm font-semibold">
             Chave Pix de {receiver.name}
           </h2>

@@ -363,7 +363,7 @@ function ExpenseFormInner({ group, members, viewerMemberId, initial, onSaved }: 
             ))}
           </div>
         ) : (
-          <ul className="bg-card divide-y rounded-2xl border">
+          <ul className="bg-card divide-y rounded-2xl border shadow-card">
             {ordered.map((m) => (
               <li key={m.id} className="flex items-center gap-3 px-3 py-2">
                 <MemberAvatar name={m.name} colorKey={m.id} imageUrl={m.imageUrl} size="sm" />
@@ -387,7 +387,7 @@ function ExpenseFormInner({ group, members, viewerMemberId, initial, onSaved }: 
           Como dividir?
         </h2>
         <SplitMethodPicker value={method} onChange={setMethod} />
-        <ul className="bg-card mt-3 divide-y rounded-2xl border">
+        <ul className="bg-card mt-3 divide-y rounded-2xl border shadow-card">
           {ordered.map((m) => {
             const share = preview.ok ? preview.splits.find((s) => s.memberId === m.id)?.amountMinor : undefined;
             return (

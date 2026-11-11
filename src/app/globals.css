@@ -5,18 +5,18 @@
 @custom-variant dark (&:is(.dark *));
 
 /*
- * Meluno design tokens.
+ * Meluno design tokens — paleta "Menta festa".
  * Contrastes verificados (WCAG AA ≥ 4.5 para texto):
- *   text-muted #5C6C75 / bg #F8FAF9 = 5.19 (sobre muted #EDF3F0 = 4.84)
- *   positive #166F48 / positive-soft #E3F8EC = 5.56
- *   negative #A8432E / negative-soft #FBEAE5 = 5.13
- *   ink #172D40 / mint #B7F7D5 = 11.63
- * O menta nunca é usado como cor de texto sobre fundo claro.
+ *   tinta #172D40 / papel #FFF8EE = 13.4      muted #6B655C / papel = 5.47 (secondary = 4.96)
+ *   #0F2E22 sobre menta forte #3FCF8E = 7.34   positive #147A4C / soft #DDF7E9 = 4.74
+ *   negative #B43C2C / soft #FFE7E2 = 4.91     warning #8A5A00 / soft #FFF1CC = 5.28
+ * Menta e coral são cores de preenchimento; como texto em fundo claro usamos
+ * os tons escuros (positive/negative).
  */
 
 @theme inline {
   --font-sans: var(--font-inter);
-  --font-display: var(--font-jakarta);
+  --font-display: var(--font-nunito);
 
   --color-background: var(--background);
   --color-foreground: var(--foreground);
@@ -42,6 +42,11 @@
   --color-mint: var(--mint);
   --color-mint-foreground: var(--mint-foreground);
   --color-brand-dot: var(--brand-dot);
+  --color-mint-strong: var(--mint-strong);
+  --color-coral: var(--coral);
+  --color-sun: var(--sun);
+  --color-grape: var(--grape);
+  --color-paper: var(--paper);
 
   /* Semânticas financeiras */
   --color-positive: var(--positive);
@@ -59,80 +64,97 @@
   --radius-3xl: calc(var(--radius) * 2);
   --radius-4xl: calc(var(--radius) * 2.67);
 
-  --shadow-card: 0 1px 2px rgb(23 45 64 / 0.04), 0 4px 16px -6px rgb(23 45 64 / 0.08);
-  --shadow-float: 0 8px 28px -8px rgb(23 45 64 / 0.28);
+  /* Sombras "de tecla": sólidas, sem blur — dão o volume brincalhão. */
+  --shadow-card: 0 3px 0 var(--edge);
+  --shadow-float: 0 6px 0 var(--edge), 0 16px 32px -16px rgb(23 45 64 / 0.25);
 
   --ease-out-soft: cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 :root {
   color-scheme: light;
-  --radius: 0.75rem;
+  --radius: 0.875rem;
 
   --ink: #172d40;
-  --mint: #b7f7d5;
-  --mint-foreground: #172d40;
-  --brand-dot: #1fa36d;
+  --paper: #fff8ee;
+  --mint: #7ee8b5;
+  --mint-strong: #3fcf8e;
+  --mint-foreground: #0f2e22;
+  --coral: #ff7a6b;
+  --sun: #ffc94a;
+  --grape: #8b7bff;
+  --brand-dot: #3fcf8e;
+  --edge: #eadfcc;
 
-  --background: #f8faf9;
-  --foreground: #192a30;
+  --background: #fff8ee;
+  --foreground: #172d40;
   --card: #ffffff;
-  --card-foreground: #192a30;
+  --card-foreground: #172d40;
   --popover: #ffffff;
-  --popover-foreground: #192a30;
-  --primary: #172d40;
-  --primary-foreground: #ffffff;
-  --secondary: #edf3f0;
+  --popover-foreground: #172d40;
+  --primary: #3fcf8e;
+  --primary-foreground: #0f2e22;
+  --primary-edge: #2ba673;
+  --secondary: #f4ede1;
   --secondary-foreground: #172d40;
-  --muted: #edf3f0;
-  --muted-foreground: #5c6c75;
-  --accent: #e7f1ec;
+  --muted: #f4ede1;
+  --muted-foreground: #6b655c;
+  --accent: #efe6d6;
   --accent-foreground: #172d40;
-  --destructive: #a8432e;
-  --border: #e3e9e6;
-  --input: #d6dfdb;
-  --ring: #172d40;
+  --destructive: #c2392b;
+  --destructive-edge: #8f2a20;
+  --border: #eadfcc;
+  --input: #e2d5bf;
+  --ring: #3fcf8e;
 
-  --positive: #166f48;
-  --positive-soft: #e3f8ec;
-  --negative: #a8432e;
-  --negative-soft: #fbeae5;
-  --warning: #925400;
-  --warning-soft: #fdf1dc;
+  --positive: #147a4c;
+  --positive-soft: #ddf7e9;
+  --negative: #b43c2c;
+  --negative-soft: #ffe7e2;
+  --warning: #8a5a00;
+  --warning-soft: #fff1cc;
 }
 
 .dark {
   color-scheme: dark;
-  --ink: #0d1a24;
-  --mint: #b7f7d5;
-  --mint-foreground: #0d1a24;
-  --brand-dot: #b7f7d5;
+  --ink: #0b1822;
+  --paper: #112230;
+  --mint: #7ee8b5;
+  --mint-strong: #5fdca2;
+  --mint-foreground: #0f2e22;
+  --coral: #ff8f82;
+  --sun: #ffd36b;
+  --grape: #a597ff;
+  --brand-dot: #7ee8b5;
+  --edge: #0a1620;
 
-  --background: #0d1a24;
-  --foreground: #e8efec;
-  --card: #13232f;
-  --card-foreground: #e8efec;
-  --popover: #172a37;
-  --popover-foreground: #e8efec;
-  --primary: #b7f7d5;
-  --primary-foreground: #0d1a24;
-  --secondary: #1a2c39;
-  --secondary-foreground: #e8efec;
-  --muted: #1a2c39;
-  --muted-foreground: #93a3ab;
-  --accent: #1f3442;
-  --accent-foreground: #e8efec;
-  --destructive: #f2937d;
-  --border: #223644;
-  --input: #2a4050;
-  --ring: #b7f7d5;
+  --background: #112230;
+  --foreground: #f1f5f2;
+  --card: #182b3a;
+  --card-foreground: #f1f5f2;
+  --popover: #1e3445;
+  --popover-foreground: #f1f5f2;
+  --primary: #7ee8b5;
+  --primary-foreground: #0f2e22;
+  --primary-edge: #3fb07f;
+  --secondary: #1e3445;
+  --secondary-foreground: #f1f5f2;
+  --muted: #1e3445;
+  --muted-foreground: #9db0ba;
+  --accent: #243d50;
+  --accent-foreground: #f1f5f2;
+  --destructive: #ff8f82;
+  --destructive-edge: #b9564b;
+  --border: #243d50;
+  --input: #2d4a60;
+  --ring: #7ee8b5;
 
-  --positive: #6ee7a8;
-  --positive-soft: #143428;
-  --negative: #f2937d;
-  --negative-soft: #3a2220;
-  --warning: #f5c070;
-  --warning-soft: #3a2c15;
+  --positive: #7ee8b5;
+  --positive-soft: #173a2e;
+  --negative: #ff9b8f;
+  --negative-soft: #3a2325;
+  --warning: #ffd36b;
+  --warning-soft: #3a3015;
 }
 
 @layer base {

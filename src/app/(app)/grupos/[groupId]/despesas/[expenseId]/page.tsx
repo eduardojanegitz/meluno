@@ -106,7 +106,7 @@ async function ExpenseView({ params }: Props) {
 
         <section>
           <SectionTitle>{expense.payers.length > 1 ? "Pagaram" : "Pagou"}</SectionTitle>
-          <ul className="bg-card divide-y rounded-2xl border">
+          <ul className="bg-card divide-y rounded-2xl border shadow-card">
             {expense.payers.map((p) => (
               <li key={p.memberId} className="flex items-center gap-3 px-4 py-3">
                 <MemberAvatar name={realName(p.memberId)} colorKey={p.memberId} size="sm" />
@@ -119,7 +119,7 @@ async function ExpenseView({ params }: Props) {
 
         <section>
           <SectionTitle>{methodText[expense.splitMethod]}</SectionTitle>
-          <ul className="bg-card divide-y rounded-2xl border">
+          <ul className="bg-card divide-y rounded-2xl border shadow-card">
             {expense.splits.map((s) => (
               <li key={s.memberId} className="flex items-center gap-3 px-4 py-3">
                 <MemberAvatar name={realName(s.memberId)} colorKey={s.memberId} size="sm" />
@@ -136,7 +136,7 @@ async function ExpenseView({ params }: Props) {
         {expense.notes ? (
           <section>
             <SectionTitle>Observações</SectionTitle>
-            <p className="bg-card rounded-2xl border px-4 py-3 text-sm whitespace-pre-wrap">{expense.notes}</p>
+            <p className="bg-card rounded-2xl border shadow-card px-4 py-3 text-sm whitespace-pre-wrap">{expense.notes}</p>
           </section>
         ) : null}
 

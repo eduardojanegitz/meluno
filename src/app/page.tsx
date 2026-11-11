@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowRight, Divide, HandCoins, Link2, ListChecks, ShieldCheck, Sparkles, UserPlus, Users, Smartphone } from "lucide-react";
 import { Logo } from "@/components/brand/logo";
+import { LogoMorph } from "@/components/brand/logo-morph";
+import { Melu } from "@/components/brand/melu";
 import { Button } from "@/components/ui/button";
 import { MemberAvatar } from "@/components/member-avatar";
 import { Money } from "@/components/money/money";
@@ -12,18 +14,18 @@ export const metadata: Metadata = {
 };
 
 const steps = [
-  { icon: Users, title: "Crie um grupo", text: "Viagem, casa, rolê do fim de semana. Adicione as pessoas, mesmo quem ainda não tem conta." },
-  { icon: ListChecks, title: "Registre os gastos", text: "Quem pagou, quanto e como dividir: igual, por valor, porcentagem ou partes." },
-  { icon: HandCoins, title: "Acerte em poucos passos", text: "O Meluno calcula o menor número de pagamentos para zerar tudo." },
+  { icon: Users, title: "Junte a turma", text: "Viagem, casa, churrasco de sábado. Dá pra adicionar quem ainda nem baixou nada." },
+  { icon: ListChecks, title: "Anote quem pagou", text: "Mercado, Uber, aquele vinho. Divide igual, por valor, por porcentagem ou por partes." },
+  { icon: HandCoins, title: "Fecha a conta", text: "O Meluno faz a matemática e mostra o menor número de Pix pra todo mundo ficar quite." },
 ];
 
 const features = [
-  { icon: Divide, title: "Centavo por centavo", text: "As divisões sempre fecham no valor exato. O centavo que sobra alterna entre as pessoas, sem favorecer ninguém." },
-  { icon: Sparkles, title: "Menos transferências", text: "Em vez de todo mundo pagar todo mundo, você vê só os pagamentos que realmente precisam acontecer." },
-  { icon: UserPlus, title: "Convite sem fricção", text: "Comece a dividir antes de a pessoa entrar. Quando ela aceitar o convite, o histórico já está lá." },
-  { icon: Link2, title: "Pix à mão", text: "Cadastre suas chaves Pix e quem precisa te pagar copia com um toque. O Meluno não movimenta dinheiro." },
-  { icon: ShieldCheck, title: "Privado por padrão", text: "Grupos, gastos e chaves Pix ficam visíveis só para quem participa do grupo." },
-  { icon: Smartphone, title: "Feito para o celular", text: "Instale na tela inicial e use como um app. Tem modo escuro e funciona bem no computador também." },
+  { icon: Divide, title: "Centavo por centavo", text: "A conta fecha no centavo. E o centavo que sobra vai rodando entre a turma, pra ninguém sair no prejuízo sempre." },
+  { icon: Sparkles, title: "Menos transferências", text: "Nada de cinco Pix cruzados. Você vê só os pagamentos que precisam acontecer." },
+  { icon: UserPlus, title: "Chama quem quiser", text: "Comece antes de a pessoa entrar. Quando ela aceitar o convite, tá tudo lá esperando." },
+  { icon: Link2, title: "Pix à mão", text: "Deixe sua chave Pix salva e quem te deve copia com um toque. O dinheiro vai direto, o Meluno não toca nele." },
+  { icon: ShieldCheck, title: "Privado por padrão", text: "Grupo é coisa de quem tá nele. Ninguém de fora vê seus gastos ou suas chaves." },
+  { icon: Smartphone, title: "Feito para o celular", text: "Fica na tela inicial como um app. Tem modo escuro e funciona no computador também." },
 ];
 
 export default function Home() {
@@ -50,22 +52,21 @@ export default function Home() {
         {/* Hero */}
         <section className="mx-auto grid w-full max-w-6xl items-center gap-12 px-4 pt-8 pb-20 sm:px-8 lg:grid-cols-[1.1fr_1fr] lg:pt-16">
           <div className="animate-in fade-in slide-in-from-bottom-3 duration-700">
-            <p className="bg-secondary text-secondary-foreground inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-semibold">
-              <span className="bg-brand-dot size-1.5 rounded-full" aria-hidden="true" />
-              Divisão de gastos em grupo
+            <p className="text-[56px] sm:text-7xl">
+              <LogoMorph mood="happy" delay={900} />
             </p>
-            <h1 className="mt-5 text-[40px] leading-[1.05] font-extrabold tracking-[-0.035em] text-balance sm:text-6xl">
+            <h1 className="mt-6 text-[34px] leading-[1.08] font-black tracking-[-0.02em] text-balance sm:text-5xl">
               Compartilhe momentos.
               <br />
-              <span className="text-muted-foreground">Não complicações.</span>
+              <span className="text-positive">Não complicações.</span>
             </h1>
             <p className="text-muted-foreground mt-5 max-w-xl text-lg text-pretty">
-              Organize gastos em grupo, divida contas do jeito certo e descubra quem deve para quem, sem planilha e sem climão.
+              Viagem, casa, rolê. Você anota os gastos, o Meluno faz as contas e mostra quem deve quanto pra quem. Sem planilha e sem climão.
             </p>
-            <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+            <div className="mt-8 flex flex-col gap-4 sm:flex-row">
               <Button asChild size="lg">
                 <Link href="/criar-conta">
-                  Começar agora <ArrowRight />
+                  Bora começar <ArrowRight />
                 </Link>
               </Button>
               <Button asChild size="lg" variant="outline">
@@ -80,15 +81,15 @@ export default function Home() {
         {/* Como funciona */}
         <section aria-labelledby="como-funciona" className="bg-card border-y">
           <div className="mx-auto w-full max-w-6xl px-4 py-20 sm:px-8">
-            <h2 id="como-funciona" className="text-3xl font-extrabold sm:text-4xl">
-              Como funciona
+            <h2 id="como-funciona" className="text-3xl font-black sm:text-4xl">
+              Três passos e pronto
             </h2>
             <ol className="mt-10 grid gap-6 sm:grid-cols-3">
               {steps.map((s, i) => (
                 <li key={s.title} className="relative">
-                  <span className="text-muted-foreground font-display text-sm font-bold">0{i + 1}</span>
-                  <span className="bg-mint text-mint-foreground mt-2 flex size-12 items-center justify-center rounded-2xl">
-                    <s.icon className="size-5" aria-hidden="true" />
+                  <span className="bg-ink font-display dark:bg-mint dark:text-mint-foreground flex size-8 items-center justify-center rounded-full text-sm font-black text-white">{i + 1}</span>
+                  <span className={`${["bg-mint", "bg-sun", "bg-coral"][i]} text-ink mt-3 flex size-14 -rotate-3 items-center justify-center rounded-2xl shadow-[0_4px_0_rgb(0_0_0/0.12)]`}>
+                    <s.icon className="size-6" strokeWidth={2.25} aria-hidden="true" />
                   </span>
                   <h3 className="mt-4 text-lg font-bold">{s.title}</h3>
                   <p className="text-muted-foreground mt-1.5">{s.text}</p>
@@ -100,14 +101,16 @@ export default function Home() {
 
         {/* Recursos */}
         <section aria-labelledby="recursos" className="mx-auto w-full max-w-6xl px-4 py-20 sm:px-8">
-          <h2 id="recursos" className="max-w-2xl text-3xl font-extrabold text-balance sm:text-4xl">
+          <h2 id="recursos" className="max-w-2xl text-3xl font-black text-balance sm:text-4xl">
             Conta certa, conversa leve.
           </h2>
           <ul className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {features.map((f) => (
-              <li key={f.title} className="bg-card shadow-card rounded-3xl border p-6">
-                <f.icon className="text-positive size-6" aria-hidden="true" />
-                <h3 className="mt-4 font-bold">{f.title}</h3>
+            {features.map((f, i) => (
+              <li key={f.title} className="bg-card shadow-card rounded-3xl border-2 p-6 transition-transform hover:-translate-y-1 hover:-rotate-[0.5deg]">
+                <span className={`${["bg-mint", "bg-sun", "bg-grape/30", "bg-coral/40", "bg-mint", "bg-sun"][i]} text-ink flex size-11 items-center justify-center rounded-xl`}>
+                  <f.icon className="size-5" strokeWidth={2.25} aria-hidden="true" />
+                </span>
+                <h3 className="mt-4 text-lg font-extrabold">{f.title}</h3>
                 <p className="text-muted-foreground mt-1.5 text-sm leading-relaxed">{f.text}</p>
               </li>
             ))}
@@ -116,14 +119,15 @@ export default function Home() {
 
         {/* CTA final */}
         <section className="px-4 pb-20 sm:px-8">
-          <div className="bg-ink dark:bg-card mx-auto max-w-6xl overflow-hidden rounded-[32px] px-6 py-14 text-center text-white sm:px-12 dark:border dark:text-foreground">
-            <h2 className="text-3xl font-extrabold text-balance sm:text-4xl">
+          <div className="bg-ink relative mx-auto max-w-6xl overflow-hidden rounded-[32px] px-6 pt-14 pb-12 text-center text-white sm:px-12 dark:border-2 dark:border-[#243d50]">
+            <Melu mood="celebrate" size={112} className="mx-auto" />
+            <h2 className="mt-4 text-3xl font-black text-balance sm:text-4xl">
               A próxima conta já chega dividida<span className="text-mint">.</span>
             </h2>
-            <p className="mx-auto mt-3 max-w-md text-white/75 dark:text-muted-foreground">Crie sua conta em menos de um minuto e convide sua turma.</p>
+            <p className="mx-auto mt-3 max-w-md text-white/75">Leva menos de um minuto. Depois é só chamar a turma.</p>
             <Button asChild size="lg" variant="mint" className="mt-8">
               <Link href="/criar-conta">
-                Criar conta <ArrowRight />
+                Criar minha conta <ArrowRight />
               </Link>
             </Button>
           </div>
@@ -146,9 +150,13 @@ function HeroIllustration() {
     { id: "ex-carla", name: "Carla", amount: -3330 },
   ];
   return (
-    <figure className="animate-in fade-in slide-in-from-bottom-6 relative mx-auto w-full max-w-sm duration-1000 lg:max-w-md" aria-label="Exemplo ilustrativo de um grupo no Meluno">
-      <div className="bg-mint/40 absolute -inset-6 -z-10 rounded-[48px] blur-2xl dark:bg-mint/10" aria-hidden="true" />
-      <div className="bg-card shadow-float rounded-[32px] border p-5" aria-hidden="true">
+    <figure className="animate-in fade-in slide-in-from-bottom-6 relative mx-auto mt-10 w-full max-w-sm duration-1000 lg:mt-0 lg:max-w-md" aria-label="Exemplo ilustrativo de um grupo no Meluno">
+      <div className="bg-sun absolute -top-4 -right-3 -z-10 size-24 rounded-full" aria-hidden="true" />
+      <div className="bg-coral/50 absolute -bottom-5 -left-4 -z-10 size-16 rotate-12 rounded-[22px]" aria-hidden="true" />
+      <div className="absolute -top-14 -left-3 z-10 sm:-left-8" aria-hidden="true">
+        <Melu mood="celebrate" size={84} />
+      </div>
+      <div className="bg-card shadow-float rotate-[1.5deg] rounded-[32px] border-2 p-5" aria-hidden="true">
         <div className="flex items-center justify-between">
           <div>
             <p className="text-muted-foreground text-xs font-medium">Grupo</p>

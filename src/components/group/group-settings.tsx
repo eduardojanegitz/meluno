@@ -93,7 +93,7 @@ function InviteSection({ groupId, invitations, onChange }: { groupId: string; in
   return (
     <section id="convidar" className="scroll-mt-24">
       <SectionTitle>Convidar pessoas</SectionTitle>
-      <div className="bg-card space-y-5 rounded-2xl border p-4">
+      <div className="bg-card space-y-5 rounded-2xl border shadow-card p-4">
         <div>
           <p className="flex items-center gap-2 text-sm font-semibold">
             <Link2 className="size-4" aria-hidden="true" /> Link de convite
@@ -210,7 +210,7 @@ function MembersSection({ group, isAdmin, members, onChange }: { group: Props["g
   return (
     <section>
       <SectionTitle>Pessoas no grupo</SectionTitle>
-      <ul className="bg-card divide-y rounded-2xl border">
+      <ul className="bg-card divide-y rounded-2xl border shadow-card">
         {visible.map((m) => (
           <li key={m.id} className="flex items-center gap-3 px-4 py-3">
             <MemberAvatar name={m.name} colorKey={m.id} imageUrl={m.imageUrl} provisional={m.status === "PROVISIONAL"} />
@@ -277,7 +277,7 @@ function MembersSection({ group, isAdmin, members, onChange }: { group: Props["g
       {!group.archived ? (
         <form
           noValidate
-          className="bg-card mt-3 rounded-2xl border p-4"
+          className="bg-card mt-3 rounded-2xl border shadow-card p-4"
           onSubmit={(e) => {
             e.preventDefault();
             if (!name.trim()) return;
@@ -325,7 +325,7 @@ function GroupForm({ group, onSaved }: { group: Props["group"]; onSaved: () => v
       <SectionTitle>Configurações do grupo</SectionTitle>
       <form
         noValidate
-        className="bg-card space-y-5 rounded-2xl border p-4"
+        className="bg-card space-y-5 rounded-2xl border shadow-card p-4"
         onSubmit={(e) => {
           e.preventDefault();
           void save.run({ groupId: group.id, name, description, category, simplifyDebts: simplify }, { successMessage: "Grupo atualizado", onSuccess: onSaved });

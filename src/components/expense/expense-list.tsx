@@ -50,8 +50,9 @@ export function ExpenseList({ groupId, currency, archived, expenses }: { groupId
       <div className="bg-card rounded-3xl border">
         <EmptyState
           icon={ReceiptText}
-          title="Nenhuma despesa ainda"
-          description="Registre o que alguém pagou e o Meluno faz as contas."
+          title="Nenhum gasto ainda"
+          mood="happy"
+          description="Anote o que alguém pagou e deixa a matemática comigo."
           action={
             !archived ? (
               <Button asChild variant="mint">
@@ -78,7 +79,7 @@ export function ExpenseList({ groupId, currency, archived, expenses }: { groupId
       {months.map(([month, items]) => (
         <section key={month}>
           <h3 className="text-muted-foreground mb-1 text-[13px] font-semibold">{monthLabel(month)}</h3>
-          <ul className="bg-card divide-y rounded-2xl border px-4">
+          <ul className="bg-card divide-y rounded-2xl border shadow-card px-4">
             <AnimatePresence initial={false}>
               {items.map((e) => (
                 <motion.li key={e.id} layout initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>

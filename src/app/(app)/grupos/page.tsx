@@ -46,8 +46,9 @@ async function GroupList() {
       <div className="bg-card rounded-3xl border">
         <EmptyState
           icon={Users}
-          title="Nenhum grupo ainda"
-          description="Crie um grupo para cada situação: a viagem, a casa, o casal, o churrasco."
+          title="Tá vazio por aqui"
+          mood="happy"
+          description="Um grupo pra cada rolê: a viagem, a casa, o casal, o churrasco."
           action={
             <Button asChild>
               <Link href="/grupos/novo">

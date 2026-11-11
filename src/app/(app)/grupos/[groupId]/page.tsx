@@ -135,7 +135,7 @@ async function GroupView({ params, searchParams }: Props) {
                   <Check className="size-5" aria-hidden="true" /> Tudo acertado neste grupo.
                 </div>
               ) : (
-                <ul className="bg-card divide-y rounded-2xl border">
+                <ul className="bg-card divide-y rounded-2xl border shadow-card">
                   {suggestions.map((d) => {
                     const involvesMe = d.fromMemberId === me.id || d.toMemberId === me.id;
                     return (
@@ -168,7 +168,7 @@ async function GroupView({ params, searchParams }: Props) {
             {pending.length > 0 ? (
               <section>
                 <SectionTitle>Aguardando confirmação</SectionTitle>
-                <ul className="bg-card divide-y rounded-2xl border">
+                <ul className="bg-card divide-y rounded-2xl border shadow-card">
                   {pending.map((s) => (
                     <li key={s.id} className="px-4 py-3.5">
                       <p className="text-sm">
@@ -190,7 +190,7 @@ async function GroupView({ params, searchParams }: Props) {
 
             <section>
               <SectionTitle>Saldo de cada pessoa</SectionTitle>
-              <ul className="bg-card divide-y rounded-2xl border">
+              <ul className="bg-card divide-y rounded-2xl border shadow-card">
                 {members.map((m) => (
                   <li key={m.id} className="flex items-center gap-3 px-4 py-3">
                     <MemberAvatar name={m.name} colorKey={m.id} imageUrl={m.imageUrl} provisional={m.status === "PROVISIONAL"} />
@@ -216,7 +216,7 @@ async function GroupView({ params, searchParams }: Props) {
             {confirmed.length > 0 ? (
               <section>
                 <SectionTitle>Pagamentos registrados</SectionTitle>
-                <ul className="bg-card divide-y rounded-2xl border">
+                <ul className="bg-card divide-y rounded-2xl border shadow-card">
                   {confirmed.map((s) => (
                     <li key={s.id} className="flex items-center gap-3 px-4 py-3">
                       <div className="min-w-0 flex-1">
@@ -239,7 +239,7 @@ async function GroupView({ params, searchParams }: Props) {
           </TabsContent>
 
           <TabsContent value="membros" className="mt-5 space-y-4">
-            <ul className="bg-card divide-y rounded-2xl border">
+            <ul className="bg-card divide-y rounded-2xl border shadow-card">
               {activeMembers.map((m) => (
                 <li key={m.id} className="flex items-center gap-3 px-4 py-3">
                   <MemberAvatar name={m.name} colorKey={m.id} imageUrl={m.imageUrl} provisional={m.status === "PROVISIONAL"} />

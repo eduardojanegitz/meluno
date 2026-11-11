@@ -54,7 +54,7 @@ export function ProfileForm({ profile }: { profile: Profile }) {
     >
       <section>
         <SectionTitle>Dados</SectionTitle>
-        <div className="bg-card space-y-4 rounded-2xl border p-4">
+        <div className="bg-card space-y-4 rounded-2xl border shadow-card p-4">
           <div className="space-y-1.5">
             <Label htmlFor="p-name">Nome</Label>
             <Input id="p-name" value={name} onChange={(e) => setName(e.target.value)} maxLength={60} autoComplete="name" aria-invalid={save.fieldErrors.name ? true : undefined} />
@@ -92,7 +92,7 @@ export function PixKeys({ keys }: { keys: Profile["pixKeys"] }) {
   return (
     <section>
       <SectionTitle>Chaves Pix</SectionTitle>
-      <div className="bg-card rounded-2xl border p-4">
+      <div className="bg-card rounded-2xl border shadow-card p-4">
         <p className="text-muted-foreground text-xs">
           Ficam visíveis só para quem participa de grupos com você, para facilitar o acerto. O Meluno não faz transferências.
         </p>

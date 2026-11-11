@@ -5,6 +5,7 @@ import { ArrowLeftRight, BellRing, ChevronRight, MailOpen, Plus, Scale, Users } 
 import { PageBody, PageHeader, SectionTitle } from "@/components/app/page-header";
 import { GroupCard } from "@/components/group/group-card";
 import { EmptyState } from "@/components/empty-state";
+import { Melu } from "@/components/brand/melu";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { AnimatedMoney } from "@/components/money/animated-money";
@@ -85,8 +86,9 @@ async function Dashboard() {
           <div className="bg-card rounded-3xl border">
             <EmptyState
               icon={Users}
-              title="Comece criando um grupo"
-              description="Viagem, casa, casal ou o churrasco de sábado: crie um grupo e convide quem divide com você."
+              title="Oi! Bora dividir alguma coisa?"
+              mood="happy"
+              description="Crie um grupo pra viagem, a casa ou o churrasco de sábado e chame quem divide com você."
               action={
                 <Button asChild>
                   <Link href="/grupos/novo">
@@ -137,13 +139,18 @@ async function Dashboard() {
 function BalanceHero({ totals }: { totals: CurrencyTotals[] }) {
   const main = totals[0] ?? { currency: "BRL", receivableMinor: 0, payableMinor: 0, netMinor: 0 };
   const others = totals.slice(1);
-  const state = main.netMinor > 0 ? "no total, você tem a receber" : main.netMinor < 0 ? "no total, você deve" : "tudo acertado por aqui";
+  const state = main.netMinor > 0 ? "no total, você tem a receber" : main.netMinor < 0 ? "no total, você deve" : "tudo quite por aqui";
+  // O Melu reage ao saldo: comemora quando está tudo quite, se preocupa quando você deve.
+  const mood = main.netMinor === 0 ? "celebrate" : main.netMinor < 0 ? "worried" : "happy";
 
   return (
     <section aria-label="Saldo geral" className="relative overflow-hidden rounded-3xl bg-[#172D40] p-5 text-white sm:p-6 dark:ring-1 dark:ring-white/10">
       <div aria-hidden="true" className="bg-mint/20 absolute -top-20 -right-16 size-56 rounded-full blur-3xl" />
+      <div aria-hidden="true" className="absolute top-3 right-3 sm:top-4 sm:right-5">
+        <Melu mood={mood} size={64} />
+      </div>
       <p className="text-sm text-white/70">Saldo geral</p>
-      <AnimatedMoney amountMinor={main.netMinor} currency={main.currency} absolute className="font-display mt-1 block text-[40px] leading-tight font-extrabold tracking-tight text-white" />
+      <AnimatedMoney amountMinor={main.netMinor} currency={main.currency} absolute className="font-display mt-1 block text-[40px] leading-tight font-black tracking-tight text-white" />
       <p className="text-sm text-white/70">{state}</p>
       <div className="mt-5 grid grid-cols-2 gap-3">
         <div className="rounded-2xl bg-white/8 p-3">

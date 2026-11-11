@@ -40,7 +40,7 @@ async function ProfileContent() {
         </div>
       </div>
 
-      <Link href="/convites" className="bg-card hover:bg-muted/50 flex items-center gap-3 rounded-2xl border px-4 py-3.5 text-sm font-medium">
+      <Link href="/convites" className="bg-card hover:bg-muted/50 flex items-center gap-3 rounded-2xl border shadow-card px-4 py-3.5 text-sm font-medium">
         <MailOpen className="text-muted-foreground size-5" aria-hidden="true" />
         <span className="flex-1">Convites recebidos</span>
         <ChevronRight className="text-muted-foreground size-4" aria-hidden="true" />
