@@ -8,6 +8,7 @@ import { assertWritable, lockGroup, requireAdmin, requireMember } from "./access
 import { logActivity } from "./activity";
 import { loadGroupLedger } from "./ledger";
 import { computeBalances } from "@/server/domain/balance";
+import { dbDateToCivil } from "@/schemas/common";
 
 export async function createGroup(viewer: Viewer, raw: z.input<typeof createGroupSchema>) {
   const input = createGroupSchema.parse(raw);
@@ -162,5 +163,64 @@ export async function removeMember(viewer: Viewer, raw: z.input<typeof memberAct
     } else {
       await tx.groupMember.update({ where: { id: target.id }, data: { status: "REMOVED", leftAt: new Date() } });
     }
+  });
+}
+
+/**
+ * Resumo para "Encerrar grupo": quanto a turma gastou, quem mais pagou e
+ * onde foi o dinheiro. Só leitura; qualquer membro ativo pode ver.
+ */
+export async function getGroupSummary(viewer: Viewer, groupId: string) {
+  return db.$transaction(async (tx) => {
+    const me = await requireMember(tx, viewer, groupId);
+    const expenses = await tx.expense.findMany({
+      where: { groupId, deletedAt: null },
+      select: { amountMinor: true, category: true, date: true, payers: { select: { memberId: true, amountMinor: true } } },
+    });
+    const members = await tx.groupMember.findMany({ where: { groupId }, select: { id: true, displayName: true } });
+    const settlements = await tx.settlement.count({ where: { groupId, deletedAt: null, status: "CONFIRMED" } });
+    const balances = computeBalances(await loadGroupLedger(tx, groupId));
+
+    const totalMinor = expenses.reduce((s, e) => s + e.amountMinor, 0);
+    const paidBy = new Map<string, number>();
+    const byCategory = new Map<string, number>();
+    for (const e of expenses) {
+      byCategory.set(e.category, (byCategory.get(e.category) ?? 0) + e.amountMinor);
+      for (const p of e.payers) paidBy.set(p.memberId, (paidBy.get(p.memberId) ?? 0) + p.amountMinor);
+    }
+    const top = <K,>(m: Map<K, number>) => [...m.entries()].sort((a, b) => b[1] - a[1])[0];
+    const topPayer = top(paidBy);
+    const topCategory = top(byCategory);
+    const dates = expenses.map((e) => e.date.getTime()).sort((a, b) => a - b);
+    const name = (id: string) => (id === me.id ? "Você" : (members.find((m) => m.id === id)?.displayName ?? "Ex-membro"));
+
+    return {
+      currency: me.group.currency,
+      totalMinor,
+      expenseCount: expenses.length,
+      settlementCount: settlements,
+      topPayer: topPayer ? { name: name(topPayer[0]), amountMinor: topPayer[1] } : null,
+      topCategory: topCategory ? { category: topCategory[0], amountMinor: topCategory[1] } : null,
+      firstDate: dates.length ? dbDateToCivil(new Date(dates[0])) : null,
+      lastDate: dates.length ? dbDateToCivil(new Date(dates[dates.length - 1])) : null,
+      settled: [...balances.values()].every((b) => b === 0),
+      isAdmin: me.role === "ADMIN",
+      archived: Boolean(me.group.archivedAt),
+    };
+  });
+}
+
+/** Encerrar = arquivar, mas só com todo mundo quite (administradores). */
+export async function closeGroup(viewer: Viewer, groupId: string) {
+  return db.$transaction(async (tx) => {
+    const me = await requireAdmin(tx, viewer, groupId);
+    assertWritable(me.group);
+    await lockGroup(tx, groupId);
+    const balances = computeBalances(await loadGroupLedger(tx, groupId));
+    if (![...balances.values()].every((b) => b === 0)) {
+      throw new AppError("VALIDATION", "Ainda tem acerto pendente. Quando todo mundo ficar quite, dá pra encerrar.");
+    }
+    await tx.group.update({ where: { id: groupId }, data: { archivedAt: new Date() } });
+    await logActivity(tx, { groupId, actorMemberId: me.id, type: "GROUP_ARCHIVED", entityType: "group", entityId: groupId, payload: { closed: true } });
   });
 }

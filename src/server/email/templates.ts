@@ -69,3 +69,24 @@ export function resetPasswordMessage(to: string, url: string): EmailMessage {
     text: `Recebemos um pedido para redefinir a senha da sua conta Meluno.\n\nCrie uma nova senha:\n${url}\n\nO link expira em 1 hora. Se você não pediu isso, ignore esta mensagem.`,
   };
 }
+
+export function paymentReminderMessage(
+  to: string,
+  data: { creditorName: string; groupName: string; amountLabel: string; url: string; pixCode?: string },
+): EmailMessage {
+  const pix = data.pixCode
+    ? `<br><br><strong>Pix Copia e Cola</strong> (cole no app do seu banco):<br><span style="word-break:break-all;font-family:monospace;font-size:12px">${escapeHtml(data.pixCode)}</span>`
+    : "";
+  return {
+    to,
+    subject: `${data.creditorName} lembrou você: ${data.amountLabel} em "${data.groupName}"`,
+    html: layout({
+      title: "Um lembrete gentil",
+      intro: `${escapeHtml(data.creditorName)} pediu pra te lembrar do acerto de <strong>${escapeHtml(data.amountLabel)}</strong> no grupo <strong>${escapeHtml(data.groupName)}</strong>. Sem pressão: quando pagar, é só marcar no Meluno.${pix}`,
+      cta: "Ver no Meluno",
+      url: data.url,
+      outro: "Você recebe este e-mail porque participa desse grupo. O Meluno não processa pagamentos.",
+    }),
+    text: `${data.creditorName} pediu pra te lembrar do acerto de ${data.amountLabel} no grupo "${data.groupName}".${data.pixCode ? `\n\nPix Copia e Cola:\n${data.pixCode}` : ""}\n\nVer no Meluno:\n${data.url}`,
+  };
+}

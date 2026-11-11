@@ -9,6 +9,7 @@ import * as expenses from "@/server/services/expenses";
 import * as settlements from "@/server/services/settlements";
 import { getMemberPixKeys } from "@/server/services/profile";
 import { enforceRateLimit } from "@/server/rate-limit";
+import * as reminders from "@/server/services/reminders";
 
 export const createExpenseAction = authedAction("expense.create", createExpenseSchema, async (input, viewer) => {
   await enforceRateLimit(`expense:${viewer.userId}`, 120, 3600);
@@ -29,3 +30,8 @@ export const deleteSettlementAction = authedAction("settlement.delete", settleme
 export const getPixKeysAction = authedAction("pix.read", z.object({ groupId: idSchema, memberId: idSchema }), (input, viewer) =>
   getMemberPixKeys(viewer, input.groupId, input.memberId),
 );
+
+export const sendReminderAction = authedAction("reminder.send", reminders.reminderSchema, async (input, viewer) => {
+  await enforceRateLimit(`reminder:${viewer.userId}`, 30, 3600);
+  return reminders.sendPaymentReminder(viewer, input);
+});

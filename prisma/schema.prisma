@@ -160,6 +160,7 @@ model Group {
   expenses    Expense[]
   settlements Settlement[]
   activity    ActivityLog[]
+  reminders   PaymentReminder[]
 
   @@map("group")
 }
@@ -210,6 +211,8 @@ model GroupMember {
   settlementsConf  Settlement[]      @relation("SettlementDecidedBy")
   settlementsDel   Settlement[]      @relation("SettlementDeletedBy")
   activity         ActivityLog[]
+  remindersSent    PaymentReminder[] @relation("ReminderCreditor")
+  remindersRecv    PaymentReminder[] @relation("ReminderDebtor")
 
   @@unique([groupId, userId])
   @@unique([groupId, email])
@@ -432,6 +435,7 @@ enum NotificationType {
   SETTLEMENT_CONFIRMED
   SETTLEMENT_REJECTED
   MEMBER_JOINED
+  PAYMENT_REMINDER
 }
 
 model Notification {
@@ -446,4 +450,21 @@ model Notification {
 
   @@index([userId, readAt, createdAt(sort: Desc)])
   @@map("notification")
+}
+
+/// Lembretes de cobrança enviados (limite: um por dupla a cada 72 h).
+model PaymentReminder {
+  id               String      @id @default(uuid(7)) @db.Uuid
+  groupId          String      @db.Uuid
+  group            Group       @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  creditorMemberId String      @db.Uuid
+  creditor         GroupMember @relation("ReminderCreditor", fields: [creditorMemberId], references: [id], onDelete: Cascade)
+  debtorMemberId   String      @db.Uuid
+  debtor           GroupMember @relation("ReminderDebtor", fields: [debtorMemberId], references: [id], onDelete: Cascade)
+  amountMinor      Int
+  channel          String      @db.VarChar(16)
+  createdAt        DateTime    @default(now())
+
+  @@index([groupId, creditorMemberId, debtorMemberId, createdAt(sort: Desc)])
+  @@map("payment_reminder")
 }

@@ -38,3 +38,5 @@ export const acceptInvitationByIdAction = authedAction("invite.accept_by_id", z.
 export const declineInvitationAction = authedAction("invite.decline", z.object({ invitationId: idSchema }), (input, viewer) =>
   invitations.declineInvitation(viewer, input.invitationId),
 );
+export const getGroupSummaryAction = authedAction("group.summary", z.object({ groupId: idSchema }), (input, viewer) => groups.getGroupSummary(viewer, input.groupId));
+export const closeGroupAction = authedAction("group.close", z.object({ groupId: idSchema }), (input, viewer) => groups.closeGroup(viewer, input.groupId));

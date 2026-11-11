@@ -16,6 +16,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { CivilDate } from "@/components/app/relative-time";
 import { ExpenseList } from "@/components/expense/expense-list";
 import { SettlementActions } from "@/components/settlement/settlement-actions";
+import { SettleActions } from "@/components/settlement/settle-actions";
+import { CloseGroup } from "@/components/group/close-group";
 import { groupCategories } from "@/lib/categories";
 import { requireViewer } from "@/server/auth/session";
 import { AppError } from "@/server/errors";
@@ -131,27 +133,43 @@ async function GroupView({ params, searchParams }: Props) {
             <section>
               <SectionTitle>{group.simplifyDebts ? "Como acertar (simplificado)" : "Quem deve para quem"}</SectionTitle>
               {suggestions.length === 0 ? (
-                <div className="bg-positive-soft text-positive flex items-center gap-3 rounded-2xl px-4 py-4 text-sm font-medium">
-                  <Check className="size-5" aria-hidden="true" /> Tudo acertado neste grupo.
+                <div className="bg-positive-soft text-positive flex flex-wrap items-center gap-3 rounded-2xl px-4 py-4 text-sm font-medium">
+                  <Check className="size-5" aria-hidden="true" />
+                  <span className="flex-1">Tudo acertado neste grupo.</span>
+                  {data.viewer.isAdmin && !group.archived && expenses.length > 0 ? <CloseGroup groupId={group.id} groupName={group.name} /> : null}
                 </div>
               ) : (
                 <ul className="bg-card divide-y rounded-2xl border shadow-card">
                   {suggestions.map((d) => {
-                    const involvesMe = d.fromMemberId === me.id || d.toMemberId === me.id;
+                    const person = (id: string) => {
+                      const m = members.find((x) => x.id === id);
+                      return { id, name: id === me.id ? "Você" : (m?.name ?? "Ex-membro"), hasAccount: m?.status === "ACTIVE" };
+                    };
+                    const realPerson = (id: string) => ({ ...person(id), name: realName(id) });
                     return (
-                      <li key={`${d.fromMemberId}-${d.toMemberId}`} className="flex items-center gap-3 px-4 py-3.5">
-                        <MemberAvatar name={realName(d.fromMemberId)} colorKey={d.fromMemberId} size="sm" />
-                        <ArrowRight className="text-muted-foreground size-4 shrink-0" aria-hidden="true" />
-                        <MemberAvatar name={realName(d.toMemberId)} colorKey={d.toMemberId} size="sm" />
-                        <p className="min-w-0 flex-1 text-sm">
-                          <span className="font-semibold">{nameOf(d.fromMemberId)}</span> paga{" "}
-                          <Money amountMinor={d.amountMinor} currency={group.currency} className="font-semibold" /> para{" "}
-                          <span className="font-semibold">{nameOf(d.toMemberId)}</span>
-                        </p>
+                      <li key={`${d.fromMemberId}-${d.toMemberId}`} className="px-4 py-3.5">
+                        <div className="flex items-center gap-3">
+                          <MemberAvatar name={realName(d.fromMemberId)} colorKey={d.fromMemberId} size="sm" />
+                          <ArrowRight className="text-muted-foreground size-4 shrink-0" aria-hidden="true" />
+                          <MemberAvatar name={realName(d.toMemberId)} colorKey={d.toMemberId} size="sm" />
+                          <p className="min-w-0 flex-1 text-sm">
+                            <span className="font-semibold">{nameOf(d.fromMemberId)}</span> paga{" "}
+                            <Money amountMinor={d.amountMinor} currency={group.currency} className="font-semibold" /> para{" "}
+                            <span className="font-semibold">{nameOf(d.toMemberId)}</span>
+                          </p>
+                        </div>
                         {!group.archived ? (
-                          <Button asChild size="sm" variant={involvesMe ? "mint" : "outline"}>
-                            <Link href={`/grupos/${group.id}/acertar?de=${d.fromMemberId}&para=${d.toMemberId}&valor=${d.amountMinor}`}>Registrar</Link>
-                          </Button>
+                          <div className="mt-3 pl-[76px]">
+                            <SettleActions
+                              groupId={group.id}
+                              groupName={group.name}
+                              currency={group.currency}
+                              viewerMemberId={me.id}
+                              from={realPerson(d.fromMemberId)}
+                              to={realPerson(d.toMemberId)}
+                              amountMinor={d.amountMinor}
+                            />
+                          </div>
                         ) : null}
                       </li>
                     );

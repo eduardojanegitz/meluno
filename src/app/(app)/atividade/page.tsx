@@ -48,6 +48,8 @@ function notificationText(type: string, p: NotificationPayload) {
       return <>{p.by} não reconheceu um pagamento de {amount}</>;
     case "MEMBER_JOINED":
       return <>{p.name} entrou em “{p.groupName}”</>;
+    case "PAYMENT_REMINDER":
+      return <>{p.by} lembrou você do acerto de {amount} em “{p.groupName}”</>;
     default:
       return <>Atualização em “{p.groupName}”</>;
   }
@@ -67,7 +69,7 @@ async function Feed() {
             {recent.map((n) => (
               <li key={n.id}>
                 <Link
-                  href={n.type === "INVITATION_RECEIVED" ? "/convites" : n.groupId ? `/grupos/${n.groupId}${n.type.startsWith("SETTLEMENT") ? "?aba=saldos" : ""}` : "/inicio"}
+                  href={n.type === "INVITATION_RECEIVED" ? "/convites" : n.groupId ? `/grupos/${n.groupId}${n.type.startsWith("SETTLEMENT") || n.type === "PAYMENT_REMINDER" ? "?aba=saldos" : ""}` : "/inicio"}
                   className="hover:bg-muted/50 flex items-start gap-3 px-4 py-3"
                 >
                   <span className={n.readAt ? "mt-1.5 size-2 shrink-0 rounded-full" : "bg-brand-dot mt-1.5 size-2 shrink-0 rounded-full"} aria-label={n.readAt ? undefined : "não lida"} />
