@@ -8,6 +8,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { SignOutButton } from "@/components/auth/sign-out-button";
 import { PixKeys, ProfileForm } from "@/components/profile/profile-forms";
 import { ThemeChoice } from "@/components/profile/theme-choice";
+import { DeleteAccount } from "@/components/profile/delete-account";
 import { requireViewer } from "@/server/auth/session";
 import { getProfile } from "@/server/services/profile";
 
@@ -61,6 +62,12 @@ async function ProfileContent() {
           </Link>
         ) : null}
         <SignOutButton />
+      </section>
+
+      <section className="space-y-2">
+        <SectionTitle>Privacidade</SectionTitle>
+        <p className="text-muted-foreground text-sm">Você pode excluir sua conta e seus dados pessoais a qualquer momento.</p>
+        <DeleteAccount hasPassword={profile.hasPassword} />
       </section>
     </div>
   );

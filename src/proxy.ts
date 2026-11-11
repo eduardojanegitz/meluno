@@ -19,7 +19,8 @@ export function proxy(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  if (hasSession && (pathname === "/" || AUTH_PAGES.slice(0, 2).includes(pathname))) {
+  const staleSession = request.nextUrl.searchParams.get("sessao") === "expirada";
+  if (hasSession && !staleSession && (pathname === "/" || AUTH_PAGES.slice(0, 2).includes(pathname))) {
     return NextResponse.redirect(new URL("/inicio", request.url));
   }
 

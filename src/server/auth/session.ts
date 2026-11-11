@@ -18,6 +18,7 @@ export type Viewer = { userId: string; name: string; email: string };
 /** Para páginas: redireciona para o login se não houver sessão válida. */
 export async function requireViewer(): Promise<Viewer> {
   const session = await getSession();
-  if (!session) redirect("/entrar");
+  // O parâmetro impede o proxy de devolver para /inicio quando o cookie existe mas a sessão foi revogada.
+  if (!session) redirect("/entrar?sessao=expirada");
   return { userId: session.user.id, name: session.user.name, email: session.user.email };
 }

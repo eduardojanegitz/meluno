@@ -33,6 +33,7 @@ O login com Google aparece automaticamente quando `GOOGLE_CLIENT_ID` e `GOOGLE_C
 | `npm run test:integration` | Testes contra o Postgres de teste (`meluno_test`) |
 | `npm run db:migrate` | Cria/aplica migrations em desenvolvimento |
 | `npm run db:studio` | Prisma Studio |
+| `npm run build:deploy` | Aplica migrations pendentes e gera o build (usado no deploy) |
 
 ## Estrutura
 
@@ -45,8 +46,8 @@ src/
   server/
     auth/              Better Auth + sessão
     actions/           wrapper de Server Actions (sessão, validação, erros)
-    domain/            regras financeiras puras (Etapa 4)
-    services/          casos de uso com autorização e transações (Etapa 4)
+    domain/            regras financeiras puras
+    services/          casos de uso com autorização e transações
     email/  db.ts  errors.ts  logger.ts
 prisma/                schema e migrations (com CHECK constraints financeiras)
 tests/                 integração e utilitários de teste
@@ -59,3 +60,36 @@ docs/adr/              decisões de produto e arquitetura
 - Saldos são **derivados** de despesas e acertos; nada de saldo armazenado.
 - Toda leitura/escrita passa por autorização no servidor; recursos de outros grupos respondem como inexistentes.
 - Detalhes em [`docs/adr`](docs/adr).
+
+## Deploy (Vercel + Neon + Resend)
+
+1. **Banco (Neon, Postgres 17):** crie o projeto e copie duas URLs:
+   - *pooled* → `DATABASE_URL` (usada pelo app);
+   - *direct* → `DIRECT_DATABASE_URL` (usada só pelas migrations).
+2. **E-mail (Resend):** verifique o domínio de envio e crie uma API key → `RESEND_API_KEY`.
+   Ajuste `EMAIL_FROM` para um remetente desse domínio.
+3. **Vercel:** importe o repositório e configure:
+   - *Build Command:* `npm run build:deploy` (aplica migrations antes do build);
+   - *Node.js:* 22 ou 24;
+   - variáveis de ambiente (Production e Preview):
+
+| Variável | Obrigatória | Observação |
+|---|---|---|
+| `DATABASE_URL` | sim | URL *pooled* |
+| `DIRECT_DATABASE_URL` | recomendada | URL direta, para migrations |
+| `APP_URL` | sim | URL pública, sem barra final (links de e-mail e convites) |
+| `BETTER_AUTH_SECRET` | sim | `openssl rand -base64 32` — **diferente** por ambiente |
+| `RESEND_API_KEY` | sim em produção | o build falha sem ela |
+| `EMAIL_FROM` | sim | remetente verificado no Resend |
+| `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` | não | habilitam login com Google; callback `{APP_URL}/api/auth/callback/google` |
+
+4. **Previews:** use uma *branch* do Neon por ambiente de preview, para que migrations de PRs não toquem o banco de produção.
+5. **Depois do primeiro deploy:** crie uma conta, confirme o e-mail recebido e faça um fluxo completo (grupo → despesa → acerto).
+
+A CI (`.github/workflows/ci.yml`) roda typecheck, lint, testes unitários e de integração contra um Postgres real, build de produção e `npm audit`.
+
+### Segurança em produção
+
+- Cabeçalhos definidos em `next.config.ts`: CSP, HSTS, `X-Frame-Options: DENY`, `nosniff`, `Referrer-Policy`, `Permissions-Policy`.
+- Cookies de sessão `Secure` + `HttpOnly` + `SameSite=Lax`; rate limit persistido no banco (funciona com várias instâncias).
+- Detalhes e limites conhecidos em [`docs/adr/0004-seguranca-e-lgpd.md`](docs/adr/0004-seguranca-e-lgpd.md).

@@ -12,6 +12,7 @@ export default function setup() {
   }
   execSync("npx prisma migrate deploy", {
     stdio: "inherit",
-    env: { ...process.env, DATABASE_URL: url },
+    // DIRECT_DATABASE_URL também: o prisma.config a prefere, e nunca pode apontar para outro banco aqui.
+    env: { ...process.env, DATABASE_URL: url, DIRECT_DATABASE_URL: url },
   });
 }

@@ -1,0 +1,68 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: meluno
+          POSTGRES_PASSWORD: meluno_ci
+          POSTGRES_DB: meluno_test
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U meluno"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      DATABASE_URL: postgresql://meluno:meluno_ci@localhost:5432/meluno_test
+      TEST_DATABASE_URL: postgresql://meluno:meluno_ci@localhost:5432/meluno_test
+      APP_URL: http://localhost:3000
+      # Segredo descartável, só para a CI.
+      BETTER_AUTH_SECRET: ci-only-secret-not-used-anywhere-else-0123456789
+      # O build de produção exige a chave; na CI nenhum e-mail é enviado.
+      RESEND_API_KEY: re_ci_placeholder
+      EMAIL_FROM: Meluno <nao-responda@example.test>
+      NEXT_TELEMETRY_DISABLED: "1"
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - run: npm ci
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Testes (unitários + integração)
+        run: npm test
+
+      - name: Build de produção
+        run: npm run build
+
+      - name: Auditoria de dependências de produção
+        run: npm audit --omit=dev --audit-level=high
