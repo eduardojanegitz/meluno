@@ -62,10 +62,10 @@ async function GroupList() {
   }
 
   const list = (items: typeof groups) => (
-    <ul className="space-y-3">
+    <ul className="stagger space-y-3">
       {items.map((g) => (
         <li key={g.id}>
-          <Link href={`/grupos/${g.id}`} className="focus-visible:ring-ring block rounded-2xl outline-none focus-visible:ring-2">
+          <Link href={`/grupos/${g.id}`} className="pressable focus-visible:ring-ring block rounded-2xl outline-none focus-visible:ring-2">
             <GroupCard name={g.name} category={g.category} memberCount={g.memberCount} balanceMinor={g.balanceMinor} currency={g.currency} lastActivityAt={g.lastActivityAt} className={g.archived ? "opacity-70" : undefined} />
           </Link>
         </li>

@@ -8,6 +8,14 @@ import { civilDateToDb } from "@/schemas/common";
 import { createSettlementSchema, settlementRefSchema } from "@/schemas/settlement";
 import { assertGroupMembers, assertWritable, lockGroup, requireMember, type Tx } from "./access";
 import { logActivity, notifyGroup } from "./activity";
+import { loadGroupLedger } from "./ledger";
+import { computeBalances } from "@/server/domain/balance";
+
+/** Depois de um acerto confirmado: todos os saldos do grupo ficaram zerados? (dispara a comemoração na interface) */
+async function isGroupSettled(tx: Tx, groupId: string) {
+  const balances = computeBalances(await loadGroupLedger(tx, groupId));
+  return [...balances.values()].every((b) => b === 0);
+}
 
 /**
  * Acertos (pagamentos entre membros). Regras (ADR 0001 §2):
@@ -37,7 +45,7 @@ export async function createSettlement(viewer: Viewer, raw: z.input<typeof creat
         where: { createdByMemberId_idempotencyKey: { createdByMemberId: me.id, idempotencyKey: input.idempotencyKey } },
         select: { id: true, status: true },
       });
-      if (duplicate) return { settlementId: duplicate.id, status: duplicate.status };
+      if (duplicate) return { settlementId: duplicate.id, status: duplicate.status, groupSettled: false };
 
       await assertGroupMembers(tx, input.groupId, [input.fromMemberId, input.toMemberId]);
       const receiver = await tx.groupMember.findUniqueOrThrow({ where: { id: input.toMemberId } });
@@ -76,7 +84,7 @@ export async function createSettlement(viewer: Viewer, raw: z.input<typeof creat
         { settlementId: settlement.id, amountMinor: input.amountMinor, currency: me.group.currency, by: me.displayName, groupName: me.group.name },
         status === "PENDING" ? [input.toMemberId] : [input.fromMemberId],
       );
-      return { settlementId: settlement.id, status };
+      return { settlementId: settlement.id, status, groupSettled: status === "CONFIRMED" && (await isGroupSettled(tx, input.groupId)) };
     });
   } catch (error) {
     if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
@@ -84,7 +92,7 @@ export async function createSettlement(viewer: Viewer, raw: z.input<typeof creat
         where: { groupId: input.groupId, idempotencyKey: input.idempotencyKey, createdBy: { userId: viewer.userId } },
         select: { id: true, status: true },
       });
-      if (existing) return { settlementId: existing.id, status: existing.status };
+      if (existing) return { settlementId: existing.id, status: existing.status, groupSettled: false };
     }
     throw error;
   }
@@ -131,6 +139,7 @@ async function decide(viewer: Viewer, raw: z.input<typeof settlementRefSchema>, 
       { settlementId: settlement.id, amountMinor: settlement.amountMinor, currency: settlement.currency, by: me.displayName, groupName: me.group.name },
       [settlement.fromMemberId, settlement.createdByMemberId],
     );
+    return { groupSettled: decision === "CONFIRMED" && (await isGroupSettled(tx, input.groupId)) };
   });
 }
 

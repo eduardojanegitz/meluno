@@ -3,6 +3,7 @@
 import { MotionConfig } from "motion/react";
 import { ThemeProvider } from "next-themes";
 import { Toaster } from "@/components/ui/sonner";
+import { CelebrationHost } from "@/components/celebrate/celebration";
 import { TooltipProvider } from "@/components/ui/tooltip";
 
 export function Providers({ children }: { children: React.ReactNode }) {
@@ -13,6 +14,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
         <TooltipProvider delayDuration={300}>
           {children}
           <Toaster position="top-center" />
+          <CelebrationHost />
         </TooltipProvider>
       </MotionConfig>
     </ThemeProvider>

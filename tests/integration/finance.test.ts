@@ -62,6 +62,24 @@ describe("fluxos financeiros (integração)", () => {
     expect(await balancesOf(joao, g)).toEqual({ João: 6000, Maria: -6000 });
   });
 
+  it("avisa quando um pagamento confirmado zera o grupo (dispara a comemoração)", async () => {
+    const [joao, maria] = [await makeUser("João"), await makeUser("Maria")];
+    const g = await makeGroup(joao, [maria]);
+    const [mj, mm] = [await memberOf(joao, g), await memberOf(maria, g)];
+    await equalExpense(joao, g, 20000, mj.id, [mj.id, mm.id]);
+
+    const partial = await createSettlement(joao, { groupId: g, fromMemberId: mm.id, toMemberId: mj.id, amountMinor: 4000, date: "2026-11-10", idempotencyKey: key() });
+    expect(partial.groupSettled).toBe(false);
+
+    // Registrado pela pagadora: pendente não zera nada.
+    const pending = await createSettlement(maria, { groupId: g, fromMemberId: mm.id, toMemberId: mj.id, amountMinor: 6000, date: "2026-11-10", idempotencyKey: key() });
+    expect(pending).toMatchObject({ status: "PENDING", groupSettled: false });
+
+    // Confirmar o restante zera o grupo.
+    const confirmed = await confirmSettlement(joao, { groupId: g, settlementId: pending.settlementId });
+    expect(confirmed.groupSettled).toBe(true);
+  });
+
   it("cenário 9 — pagamento integral registrado pelo pagador só conta após confirmação", async () => {
     const [joao, maria] = [await makeUser("João"), await makeUser("Maria")];
     const g = await makeGroup(joao, [maria]);

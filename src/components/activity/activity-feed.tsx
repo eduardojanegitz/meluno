@@ -14,7 +14,7 @@ export function ActivityFeed({ feed, showGroup = true, emptyText }: { feed: Feed
         mood="sleeping" description={emptyText ?? "As alterações nos seus grupos aparecem aqui."} />;
   }
   return (
-    <ul className="bg-card divide-y rounded-2xl border shadow-card px-4">
+    <ul className="stagger bg-card divide-y rounded-2xl border shadow-card px-4">
       {feed.items.map((item) => {
         const actorName = item.isViewer ? "Você" : (item.actor?.displayName ?? "Alguém");
         const href =
@@ -23,7 +23,7 @@ export function ActivityFeed({ feed, showGroup = true, emptyText }: { feed: Feed
             : `/grupos/${item.groupId}`;
         return (
           <li key={item.id}>
-            <Link href={href} className="hover:bg-muted/50 -mx-4 block rounded-xl px-4 transition-colors">
+            <Link href={href} className="pressable hover:bg-muted/50 -mx-4 block rounded-xl px-4 transition-colors">
               <ActivityItem
                 actorName={actorName}
                 avatarName={item.actor?.displayName ?? "Alguém"}

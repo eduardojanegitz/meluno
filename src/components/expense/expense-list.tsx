@@ -79,11 +79,11 @@ export function ExpenseList({ groupId, currency, archived, expenses }: { groupId
       {months.map(([month, items]) => (
         <section key={month}>
           <h3 className="text-muted-foreground mb-1 text-[13px] font-semibold">{monthLabel(month)}</h3>
-          <ul className="bg-card divide-y rounded-2xl border shadow-card px-4">
+          <ul className="stagger bg-card divide-y rounded-2xl border shadow-card px-4">
             <AnimatePresence initial={false}>
               {items.map((e) => (
                 <motion.li key={e.id} layout initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
-                  <Link href={`/grupos/${groupId}/despesas/${e.id}`} className="hover:bg-muted/50 focus-visible:ring-ring -mx-4 block rounded-xl px-4 outline-none focus-visible:ring-2">
+                  <Link href={`/grupos/${groupId}/despesas/${e.id}`} className="pressable hover:bg-muted/50 focus-visible:ring-ring -mx-4 block rounded-xl px-4 outline-none focus-visible:ring-2">
                     <ExpenseRow
                       description={e.description}
                       category={e.category}

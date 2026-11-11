@@ -5,6 +5,7 @@ import { Check, Loader2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAction } from "@/hooks/use-action";
 import { acceptInvitationAction, acceptInvitationByIdAction, declineInvitationAction } from "@/server/actions/groups";
+import { celebrate } from "@/components/celebrate/celebration";
 
 export function AcceptByToken({ token }: { token: string }) {
   const router = useRouter();
@@ -18,8 +19,8 @@ export function AcceptByToken({ token }: { token: string }) {
         accept.run(
           { token },
           {
-            successMessage: "Você entrou no grupo",
             onSuccess: ({ groupId }) => {
+              celebrate({ title: "Bem-vindo à turma!", subtitle: "Você entrou no grupo.", big: true });
               router.replace(`/grupos/${groupId}`);
               router.refresh();
             },
@@ -46,8 +47,8 @@ export function PendingInvitationActions({ invitationId }: { invitationId: strin
           accept.run(
             { invitationId },
             {
-              successMessage: "Você entrou no grupo",
               onSuccess: ({ groupId }) => {
+                celebrate({ title: "Bem-vindo à turma!", subtitle: "Você entrou no grupo.", big: true });
                 router.push(`/grupos/${groupId}`);
                 router.refresh();
               },

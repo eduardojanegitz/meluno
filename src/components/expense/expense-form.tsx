@@ -19,6 +19,7 @@ import { SplitMethodPicker, type SplitMethod } from "./split-method-picker";
 import { computeSplit, PayerError, SplitError, validatePayers, PERCENT_SCALE, SHARES_SCALE, type SplitRequest } from "@/server/domain/split";
 import { useAction } from "@/hooks/use-action";
 import { createExpenseAction, updateExpenseAction } from "@/server/actions/finance";
+import { celebrate } from "@/components/celebrate/celebration";
 
 export type FormMember = { id: string; name: string; provisional: boolean; imageUrl: string | null };
 
@@ -203,7 +204,15 @@ function ExpenseFormInner({ group, members, viewerMemberId, initial, onSaved }: 
     if (initial) {
       await update.run({ ...payload, expenseId, version: initial.version }, { successMessage: "Despesa atualizada", onSuccess: go });
     } else {
-      await create.run({ ...payload, expenseId }, { successMessage: `${description.trim()} adicionada`, onSuccess: go });
+      await create.run(
+        { ...payload, expenseId },
+        {
+          onSuccess: () => {
+            celebrate({ title: "Anotado!", subtitle: `${description.trim()} entrou na conta.`, mood: "happy" });
+            go();
+          },
+        },
+      );
     }
   }
 

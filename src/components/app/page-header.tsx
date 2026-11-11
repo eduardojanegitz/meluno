@@ -45,13 +45,13 @@ export function PageHeader({ title, subtitle, backHref, backLabel = "Voltar", ac
 }
 
 export function PageBody({ children, className }: { children: React.ReactNode; className?: string }) {
-  return <main className={cn("mx-auto w-full max-w-3xl flex-1 px-4 pt-5 sm:px-6", className)}>{children}</main>;
+  return <main className={cn("page-enter mx-auto w-full max-w-3xl flex-1 px-4 pt-5 sm:px-6", className)}>{children}</main>;
 }
 
 export function SectionTitle({ children, action }: { children: React.ReactNode; action?: React.ReactNode }) {
   return (
     <div className="mb-3 flex items-center justify-between">
-      <h2 className="text-muted-foreground text-[13px] font-semibold tracking-wide uppercase">{children}</h2>
+      <h2 className="text-muted-foreground font-display text-[13px] font-extrabold tracking-wide uppercase">{children}</h2>
       {action}
     </div>
   );

@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useAction } from "@/hooks/use-action";
 import { createGroupAction } from "@/server/actions/groups";
+import { celebrate } from "@/components/celebrate/celebration";
 
 const currencies = [
   { code: "BRL", label: "Real (R$)" },
@@ -56,8 +57,8 @@ function CreateGroupFormInner({ onCreated }: { onCreated: () => void }) {
         people: people.filter((p) => p.name.trim()).map((p) => ({ name: p.name.trim(), email: p.email.trim() })),
       },
       {
-        successMessage: "Grupo criado",
         onSuccess: ({ groupId }) => {
+          celebrate({ title: "Grupo criado!", subtitle: "Agora é anotar os gastos e chamar a turma.", big: true });
           router.push(`/grupos/${groupId}`);
           onCreated();
         },

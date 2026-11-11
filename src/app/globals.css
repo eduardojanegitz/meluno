@@ -203,3 +203,45 @@
     scroll-behavior: auto !important;
   }
 }
+
+/* ── Movimento ───────────────────────────────────────────────────────────
+ * Entradas curtas e com "mola". O bloco prefers-reduced-motion acima zera
+ * todas as durações para quem pediu menos movimento.
+ */
+@keyframes meluno-rise {
+  from { opacity: 0; transform: translateY(10px) scale(0.985); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes meluno-pop {
+  0% { transform: scale(1); }
+  40% { transform: scale(1.28) rotate(-8deg); }
+  70% { transform: scale(0.92) rotate(4deg); }
+  100% { transform: scale(1); }
+}
+.page-enter {
+  animation: meluno-rise 0.32s var(--ease-out-soft) both;
+}
+/* Listas em cascata: cada item entra 40ms depois do anterior (até o 10º). */
+.stagger > * {
+  animation: meluno-rise 0.38s var(--ease-out-soft) both;
+}
+.stagger > *:nth-child(2) { animation-delay: 40ms; }
+.stagger > *:nth-child(3) { animation-delay: 80ms; }
+.stagger > *:nth-child(4) { animation-delay: 120ms; }
+.stagger > *:nth-child(5) { animation-delay: 160ms; }
+.stagger > *:nth-child(6) { animation-delay: 200ms; }
+.stagger > *:nth-child(7) { animation-delay: 240ms; }
+.stagger > *:nth-child(8) { animation-delay: 280ms; }
+.stagger > *:nth-child(9) { animation-delay: 320ms; }
+.stagger > *:nth-child(n + 10) { animation-delay: 360ms; }
+/* Ícone da aba ativa dá um "pulinho" ao ser selecionado. */
+nav a[aria-current="page"] svg {
+  animation: meluno-pop 0.45s var(--ease-out-soft);
+}
+/* Toque em cartões/linhas clicáveis: afunda levemente. */
+.pressable {
+  transition: transform 0.12s var(--ease-out-soft);
+}
+.pressable:active {
+  transform: scale(0.98);
+}

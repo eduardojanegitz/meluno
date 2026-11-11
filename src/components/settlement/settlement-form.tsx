@@ -14,6 +14,7 @@ import { MemberAvatar } from "@/components/member-avatar";
 import { useAction } from "@/hooks/use-action";
 import { createSettlementAction, getPixKeysAction } from "@/server/actions/finance";
 import type { FormMember } from "@/components/expense/expense-form";
+import { celebrate } from "@/components/celebrate/celebration";
 
 type Props = {
   group: { id: string; name: string; currency: string };
@@ -119,8 +120,10 @@ function SettlementFormInner({ group, members, viewerMemberId, initial, onSaved 
         void create.run(
           { groupId: group.id, fromMemberId: from, toMemberId: to, amountMinor: amount, date, method, note: note.trim() || undefined, idempotencyKey },
           {
-            successMessage: willConfirm ? "Pagamento registrado" : "Pagamento registrado — aguardando confirmação",
-            onSuccess: () => {
+            onSuccess: ({ groupSettled }) => {
+              if (groupSettled) celebrate({ title: "Tudo quite!", subtitle: "Ninguém deve nada a ninguém no grupo.", big: true });
+              else if (willConfirm) celebrate({ title: "Pagamento registrado", subtitle: "Os saldos já foram atualizados.", mood: "happy" });
+              else celebrate({ title: "Enviado!", subtitle: "Agora é só quem recebeu confirmar.", mood: "thinking" });
               router.push(`/grupos/${group.id}?aba=saldos`);
               router.refresh();
               onSaved();

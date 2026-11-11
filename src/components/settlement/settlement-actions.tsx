@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { useAction } from "@/hooks/use-action";
 import { confirmSettlementAction, deleteSettlementAction, rejectSettlementAction } from "@/server/actions/finance";
+import { celebrate } from "@/components/celebrate/celebration";
 
 type Props = { groupId: string; settlementId: string; canDecide: boolean; canDelete: boolean; pending?: boolean; compact?: boolean };
 
@@ -59,7 +60,14 @@ export function SettlementActions({ groupId, settlementId, canDecide, canDelete,
     <div className="mt-3 flex flex-wrap gap-2">
       {canDecide ? (
         <>
-          <Button size="sm" variant="mint" disabled={busy} onClick={() => confirm.run(ref, { successMessage: "Pagamento confirmado", onSuccess: done })}>
+          <Button size="sm" variant="mint" disabled={busy} onClick={() =>
+              confirm.run(ref, {
+                onSuccess: ({ groupSettled }) => {
+                  celebrate(groupSettled ? { title: "Tudo quite!", subtitle: "Ninguém deve nada a ninguém no grupo.", big: true } : { title: "Recebido!", subtitle: "Pagamento confirmado.", mood: "happy" });
+                  done();
+                },
+              })
+            }>
             {confirm.pending ? <Loader2 className="animate-spin" /> : <Check />} Confirmar recebimento
           </Button>
           <Button size="sm" variant="outline" disabled={busy} onClick={() => reject.run(ref, { successMessage: "Pagamento recusado", onSuccess: done })}>

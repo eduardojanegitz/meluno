@@ -99,10 +99,10 @@ async function Dashboard() {
             />
           </div>
         ) : (
-          <ul className="space-y-3">
+          <ul className="stagger space-y-3">
             {active.slice(0, 5).map((g) => (
               <li key={g.id}>
-                <Link href={`/grupos/${g.id}`} className="focus-visible:ring-ring block rounded-2xl outline-none focus-visible:ring-2">
+                <Link href={`/grupos/${g.id}`} className="pressable focus-visible:ring-ring block rounded-2xl outline-none focus-visible:ring-2">
                   <GroupCard
                     name={g.name}
                     category={g.category}
