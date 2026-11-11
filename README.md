@@ -103,8 +103,8 @@ A CI (`.github/workflows/ci.yml`) roda typecheck, lint, testes unitários e de i
 5. **Resend:** verifique o domínio de envio (registros DNS) e use um `EMAIL_FROM` desse domínio.
 6. **Push e resumo semanal:**
    - gere as chaves com `npx web-push generate-vapid-keys` e configure `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY` e `VAPID_SUBJECT` (`mailto:` do contato);
-   - crie `CRON_SECRET` (`openssl rand -base64 32`). A Vercel o envia sozinha para o agendador do `vercel.json`;
-   - sem as chaves, a opção de push não aparece no Perfil; sem o segredo, a rota do resumo responde 503.
+   - crie `CRON_SECRET` (`openssl rand -base64 32`). A Vercel o envia sozinha para os dois agendamentos do `vercel.json`: despesas recorrentes às 06h e resumo semanal às 08h (Brasília);
+   - sem as chaves, a opção de push não aparece no Perfil; sem o segredo, as rotas agendadas respondem 503 e **as despesas recorrentes não são lançadas**.
 7. **Depois do deploy, no celular:**
    - criar conta e confirmar o e-mail;
    - entrar com Google;
@@ -112,6 +112,7 @@ A CI (`.github/workflows/ci.yml`) roda typecheck, lint, testes unitários e de i
    - ler uma NFC-e real;
    - criar grupo, despesa e acerto;
    - ativar as notificações e usar "Enviar uma notificação de teste" (no iPhone, com o app instalado);
+   - anexar a foto de um comprovante e baixar a planilha do grupo;
    - abrir o Pix Copia e Cola no app do banco;
    - baixar os dados e excluir uma conta de teste.
 

@@ -106,3 +106,9 @@ export function formatRelativeTime(date: Date, now: Date = new Date()): string {
   const day = formatRelativeDay(date, now);
   return day === "hoje" ? `hoje, ${timeFormatter.format(date)}` : day;
 }
+
+/** "2026-12-10" → "10 de dez. de 2026" (data civil, sem fuso). */
+export function formatCivilDate(civil: string): string {
+  const [y, m, d] = civil.split("-").map(Number) as [number, number, number];
+  return new Intl.DateTimeFormat(DEFAULT_LOCALE, { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" }).format(new Date(Date.UTC(y, m - 1, d)));
+}

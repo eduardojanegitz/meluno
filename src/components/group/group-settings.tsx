@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Archive, Check, Copy, Link2, Loader2, LogOut, Mail, MoreVertical, ShieldCheck, UserMinus, UserPlus, X } from "lucide-react";
+import { Archive, Check, Copy, FileSpreadsheet, Link2, Loader2, LogOut, Mail, MoreVertical, ShieldCheck, UserMinus, UserPlus, X } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { groupCategories, type GroupCategory } from "@/lib/categories";
@@ -26,6 +26,7 @@ import {
 import { MemberAvatar } from "@/components/member-avatar";
 import { Money } from "@/components/money/money";
 import { SectionTitle } from "@/components/app/page-header";
+import { RecurringSection, type RecurringItem } from "./recurring-section";
 import { useAction } from "@/hooks/use-action";
 import {
   addMemberAction,
@@ -46,9 +47,10 @@ type Props = {
   isAdmin: boolean;
   members: Member[];
   invitations: Invitation[];
+  recurring: RecurringItem[];
 };
 
-export function GroupSettings({ group, isAdmin, members, invitations }: Props) {
+export function GroupSettings({ group, isAdmin, members, invitations, recurring }: Props) {
   const router = useRouter();
   const refresh = () => router.refresh();
 
@@ -57,6 +59,16 @@ export function GroupSettings({ group, isAdmin, members, invitations }: Props) {
       {!group.archived ? <InviteSection groupId={group.id} invitations={invitations} onChange={refresh} /> : null}
       <MembersSection group={group} isAdmin={isAdmin} members={members} onChange={refresh} />
       {isAdmin && !group.archived ? <GroupForm group={group} onSaved={refresh} /> : null}
+      <RecurringSection groupId={group.id} currency={group.currency} items={recurring} />
+      <section className="space-y-2">
+        <SectionTitle>Planilha</SectionTitle>
+        <p className="text-muted-foreground text-sm">Todas as despesas e acertos, com a parte de cada pessoa. Abre no Excel, Google Planilhas e Numbers.</p>
+        <Button asChild variant="outline" className="w-full">
+          <a href={`/api/grupos/${group.id}/exportar`} download>
+            <FileSpreadsheet aria-hidden="true" /> Baixar planilha
+          </a>
+        </Button>
+      </section>
       <DangerSection group={group} isAdmin={isAdmin} viewerBalance={members.find((m) => m.isViewer)?.balanceMinor ?? 0} />
     </div>
   );

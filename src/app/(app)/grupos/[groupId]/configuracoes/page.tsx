@@ -9,6 +9,7 @@ import { requireViewer } from "@/server/auth/session";
 import { AppError } from "@/server/errors";
 import { getGroupDetail } from "@/server/services/queries";
 import { listGroupInvitations } from "@/server/services/invitations";
+import { listRecurring } from "@/server/services/recurring";
 import { idSchema } from "@/schemas/common";
 
 export function generateMetadata({ params }: PageProps<"/grupos/[groupId]/configuracoes">): Promise<Metadata> {
@@ -29,7 +30,7 @@ async function Settings({ params }: Props) {
   const { groupId } = await params;
   if (!idSchema.safeParse(groupId).success) notFound();
   const viewer = await requireViewer();
-  const [detail, invitations] = await Promise.all([getGroupDetail(viewer, groupId), listGroupInvitations(viewer, groupId)]).catch((e) => {
+  const [detail, invitations, recurring] = await Promise.all([getGroupDetail(viewer, groupId), listGroupInvitations(viewer, groupId), listRecurring(viewer, groupId)]).catch((e) => {
     if (e instanceof AppError && e.code === "NOT_FOUND") notFound();
     throw e;
   });
@@ -38,7 +39,7 @@ async function Settings({ params }: Props) {
     <>
       <PageHeader backHref={`/grupos/${groupId}`} backLabel={`Voltar para ${detail.group.name}`} title="Grupo" subtitle={detail.group.name} />
       <PageBody>
-        <GroupSettings group={detail.group} isAdmin={detail.viewer.isAdmin} members={detail.members} invitations={invitations} />
+        <GroupSettings group={detail.group} isAdmin={detail.viewer.isAdmin} members={detail.members} invitations={invitations} recurring={recurring} />
       </PageBody>
     </>
   );

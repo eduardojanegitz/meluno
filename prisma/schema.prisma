@@ -185,6 +185,7 @@ model Group {
   settlements Settlement[]
   activity    ActivityLog[]
   reminders   PaymentReminder[]
+  recurring   RecurringExpense[]
 
   @@map("group")
 }
@@ -238,6 +239,8 @@ model GroupMember {
   itemsConsumed    ExpenseItemMember[]
   remindersSent    PaymentReminder[] @relation("ReminderCreditor")
   remindersRecv    PaymentReminder[] @relation("ReminderDebtor")
+  recurringCreated RecurringExpense[]
+  receiptsUploaded ExpenseReceipt[]
 
   @@unique([groupId, userId])
   @@unique([groupId, email])
@@ -333,8 +336,15 @@ model Expense {
   payers ExpensePayer[]
   splits ExpenseSplit[]
   items  ExpenseItem[]
+  receipt ExpenseReceipt?
+
+  /// Ocorrência gerada por uma despesa recorrente (nula nas lançadas à mão).
+  recurringExpenseId String?           @db.Uuid
+  recurringExpense   RecurringExpense? @relation(fields: [recurringExpenseId], references: [id], onDelete: SetNull)
 
   @@unique([createdByMemberId, idempotencyKey])
+  /// Uma ocorrência por data e recorrência, mesmo que o agendador rode duas vezes.
+  @@unique([recurringExpenseId, date])
   @@index([groupId, deletedAt, date(sort: Desc)])
   @@map("expense")
 }
@@ -368,6 +378,61 @@ model ExpenseSplit {
 }
 
 // ───────────────────────────── Acertos ─────────────────────────────
+
+/// Foto do comprovante: uma por despesa, JPEG sem metadados (EXIF removido no servidor).
+model ExpenseReceipt {
+  expenseId          String      @id @db.Uuid
+  expense            Expense     @relation(fields: [expenseId], references: [id], onDelete: Cascade)
+  contentType        String      @db.VarChar(30)
+  data               Bytes
+  sizeBytes          Int
+  uploadedByMemberId String      @db.Uuid
+  uploadedBy         GroupMember @relation(fields: [uploadedByMemberId], references: [id], onDelete: Restrict)
+  createdAt          DateTime    @default(now())
+
+  @@map("expense_receipt")
+}
+
+enum RecurrenceFrequency {
+  WEEKLY
+  MONTHLY
+}
+
+enum RecurrenceStatus {
+  ACTIVE
+  PAUSED
+}
+
+/// Modelo de despesa que se repete; o agendador diário gera cada ocorrência.
+model RecurringExpense {
+  id                String              @id @default(uuid(7)) @db.Uuid
+  groupId           String              @db.Uuid
+  group             Group               @relation(fields: [groupId], references: [id], onDelete: Restrict)
+  createdByMemberId String              @db.Uuid
+  createdBy         GroupMember         @relation(fields: [createdByMemberId], references: [id], onDelete: Restrict)
+  description       String              @db.VarChar(120)
+  amountMinor       Int
+  category          ExpenseCategory
+  notes             String?             @db.VarChar(1000)
+  /// Pagadores e divisão exatamente como no formulário (validados de novo a cada ocorrência).
+  payers            Json
+  split             Json
+  frequency         RecurrenceFrequency
+  /// Dia do mês da primeira ocorrência (29–31 caem no último dia em meses curtos).
+  anchorDay         Int
+  nextDate          DateTime            @db.Date
+  status            RecurrenceStatus    @default(ACTIVE)
+  pausedReason      String?             @db.VarChar(200)
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
+  deletedAt         DateTime?
+
+  expenses Expense[]
+
+  @@index([status, nextDate])
+  @@index([groupId])
+  @@map("recurring_expense")
+}
 
 enum SettlementStatus {
   /// Registrado pelo pagador; não afeta saldos até o recebedor confirmar.
@@ -467,6 +532,7 @@ enum NotificationType {
   SETTLEMENT_REJECTED
   MEMBER_JOINED
   PAYMENT_REMINDER
+  RECURRING_PAUSED
 }
 
 model Notification {

@@ -26,7 +26,11 @@ export default function PrivacyPage() {
           Google.
         </li>
         <li>
-          <strong>Uso do app:</strong> grupos, despesas (descrição, valor, data, categoria, observações, itens), acertos, convites e o histórico de alterações.
+          <strong>Uso do app:</strong> grupos, despesas (descrição, valor, data, categoria, observações, itens, recorrência), acertos, convites e o histórico de alterações.
+        </li>
+        <li>
+          <strong>Fotos de comprovante</strong>, se você anexar. Removemos os metadados da foto (como localização GPS e modelo do aparelho) antes de guardar. Elas são vistas só
+          pelas pessoas do grupo e apagadas junto com a despesa.
         </li>
         <li>
           <strong>Chaves Pix e cidade</strong>, se você cadastrar, para montar o Pix Copia e Cola de quem vai te pagar.

@@ -11,6 +11,7 @@ export type NotificationPayload = {
   amountMinor?: number;
   currency?: string;
   name?: string;
+  reason?: string;
 };
 
 export type NotificationMessage = { title: string; body: string; path: string };
@@ -41,6 +42,8 @@ export function notificationMessage(type: string, payload: NotificationPayload, 
       return { title, body: `${p.by} não reconheceu um pagamento de ${amount}`, path: balances };
     case "MEMBER_JOINED":
       return { title, body: `${p.name} entrou em “${p.groupName}”`, path: group };
+    case "RECURRING_PAUSED":
+      return { title, body: `A despesa recorrente “${p.description}” foi pausada. ${p.reason ?? ""}`.trim(), path: groupId ? `/grupos/${groupId}/configuracoes#recorrentes` : "/inicio" };
     case "PAYMENT_REMINDER":
       return { title, body: `${p.by} lembrou você do acerto de ${amount} em “${p.groupName}”`, path: balances };
     default:

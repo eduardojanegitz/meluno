@@ -40,7 +40,14 @@ const expenseFields = {
  * duplicam) e de semente do arredondamento — a prévia exibida antes de salvar
  * é exatamente o que será gravado.
  */
-export const createExpenseSchema = z.object({ ...expenseFields, expenseId: idSchema });
+export const createExpenseSchema = z
+  .object({
+    ...expenseFields,
+    expenseId: idSchema,
+    /** Repetir automaticamente a partir da data da despesa. */
+    repeat: z.enum(["WEEKLY", "MONTHLY"]).optional(),
+  })
+  .refine((v) => !(v.repeat && v.split.method === "ITEMS"), { message: "Despesas divididas por item não podem se repetir.", path: ["repeat"] });
 
 export const updateExpenseSchema = z.object({
   ...expenseFields,

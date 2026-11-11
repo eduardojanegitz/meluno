@@ -25,7 +25,7 @@ export default function ActivityPage() {
   );
 }
 
-type NotificationPayload = { by?: string; groupName?: string; description?: string; amountMinor?: number; currency?: string; name?: string };
+type NotificationPayload = { by?: string; groupName?: string; description?: string; amountMinor?: number; currency?: string; name?: string; reason?: string };
 
 function notificationText(type: string, p: NotificationPayload) {
   const amount = typeof p.amountMinor === "number" ? <Money amountMinor={p.amountMinor} currency={p.currency ?? "BRL"} className="font-semibold" /> : null;
@@ -48,6 +48,8 @@ function notificationText(type: string, p: NotificationPayload) {
       return <>{p.by} não reconheceu um pagamento de {amount}</>;
     case "MEMBER_JOINED":
       return <>{p.name} entrou em “{p.groupName}”</>;
+    case "RECURRING_PAUSED":
+      return <>A despesa recorrente “{p.description}” foi pausada. {p.reason}</>;
     case "PAYMENT_REMINDER":
       return <>{p.by} lembrou você do acerto de {amount} em “{p.groupName}”</>;
     default:
@@ -69,7 +71,7 @@ async function Feed() {
             {recent.map((n) => (
               <li key={n.id}>
                 <Link
-                  href={n.type === "INVITATION_RECEIVED" ? "/convites" : n.groupId ? `/grupos/${n.groupId}${n.type.startsWith("SETTLEMENT") || n.type === "PAYMENT_REMINDER" ? "?aba=saldos" : ""}` : "/inicio"}
+                  href={n.type === "INVITATION_RECEIVED" ? "/convites" : n.type === "RECURRING_PAUSED" && n.groupId ? `/grupos/${n.groupId}/configuracoes#recorrentes` : n.groupId ? `/grupos/${n.groupId}${n.type.startsWith("SETTLEMENT") || n.type === "PAYMENT_REMINDER" ? "?aba=saldos" : ""}` : "/inicio"}
                   className="hover:bg-muted/50 flex items-start gap-3 px-4 py-3"
                 >
                   <span className={n.readAt ? "mt-1.5 size-2 shrink-0 rounded-full" : "bg-brand-dot mt-1.5 size-2 shrink-0 rounded-full"} aria-label={n.readAt ? undefined : "não lida"} />

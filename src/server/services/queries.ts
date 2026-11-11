@@ -1,4 +1,6 @@
 import "server-only";
+import { normalizeDescription } from "@/lib/category-suggest";
+import type { ExpenseCategory } from "@/generated/prisma/enums";
 import { db } from "@/server/db";
 import type { Viewer } from "@/server/auth/session";
 import { AppError } from "@/server/errors";
@@ -186,7 +188,17 @@ export async function getGroupMembersForForm(viewer: Viewer, groupId: string) {
       orderBy: { createdAt: "asc" },
       select: { id: true, displayName: true, status: true, user: { select: { image: true } } },
     });
+    // Categoria escolhida da última vez para cada descrição (as 200 despesas mais recentes).
+    const recent = await tx.expense.findMany({
+      where: { groupId, deletedAt: null, category: { not: "OTHER" } },
+      orderBy: { createdAt: "desc" },
+      take: 200,
+      select: { description: true, category: true },
+    });
+    const categoryHints: Record<string, ExpenseCategory> = {};
+    for (const e of recent) categoryHints[normalizeDescription(e.description)] ??= e.category;
     return {
+      categoryHints,
       group: { id: me.group.id, name: me.group.name, currency: me.group.currency, archived: Boolean(me.group.archivedAt) },
       viewerMemberId: me.id,
       members: members.map((m) => ({ id: m.id, name: m.displayName, provisional: m.status === "PROVISIONAL", imageUrl: m.user?.image ?? null })),

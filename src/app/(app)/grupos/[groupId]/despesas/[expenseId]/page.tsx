@@ -3,8 +3,9 @@ import { groupPageMetadata } from "@/lib/page-titles";
 import Link from "next/link";
 import { Suspense } from "react";
 import { notFound } from "next/navigation";
-import { Pencil } from "lucide-react";
+import { Pencil, Repeat } from "lucide-react";
 import { PageBody, PageHeader, SectionTitle } from "@/components/app/page-header";
+import { ReceiptAttachment } from "@/components/expense/receipt-attachment";
 import { MemberAvatar } from "@/components/member-avatar";
 import { Money } from "@/components/money/money";
 import { Button } from "@/components/ui/button";
@@ -56,7 +57,7 @@ async function ExpenseView({ params }: Props) {
     if (e instanceof AppError && e.code === "NOT_FOUND") notFound();
     throw e;
   });
-  const { expense, history, canEdit, viewerMemberId } = detail;
+  const { expense, history, canEdit, canManageReceipt, receipt, recurring, viewerMemberId } = detail;
   const name = (id: string) => (id === viewerMemberId ? "Você" : (form.members.find((m) => m.id === id)?.name ?? "Ex-membro"));
   const realName = (id: string) => form.members.find((m) => m.id === id)?.name ?? "Ex-membro";
   const currency = expense.currency;
@@ -167,6 +168,24 @@ async function ExpenseView({ params }: Props) {
               ) : null}
             </ul>
           </section>
+        ) : null}
+
+        {receipt || (canManageReceipt && !deleted) ? (
+          <section>
+            <SectionTitle>Comprovante</SectionTitle>
+            <ReceiptAttachment groupId={groupId} expenseId={expenseId} receipt={receipt} canManage={canManageReceipt && !deleted} />
+          </section>
+        ) : null}
+
+        {recurring ? (
+          <p className="text-muted-foreground flex items-center gap-2 text-sm">
+            <Repeat className="size-4" aria-hidden="true" />
+            {recurring.frequency === "WEEKLY" ? "Repete toda semana" : "Repete todo mês"}
+            {recurring.status === "PAUSED" ? " (pausada)" : ""}.{" "}
+            <Link href={`/grupos/${groupId}/configuracoes#recorrentes`} className="text-foreground font-semibold underline-offset-4 hover:underline">
+              Gerenciar
+            </Link>
+          </p>
         ) : null}
 
         {expense.notes ? (

@@ -12,7 +12,18 @@ const rules: [RegExp, ExpenseCategory][] = [
   [/\b(cinema|passeio|parque|museu|balada|festa)/, "LEISURE"],
 ];
 
-export function suggestCategory(description: string): ExpenseCategory | null {
+/** "  Açaí da Praça " → "acai da praca": chave para lembrar categorias já usadas. */
+export function normalizeDescription(description: string): string {
+  return description.normalize("NFD").replace(/\p{Diacritic}/gu, "").toLocaleLowerCase("pt-BR").replace(/\s+/g, " ").trim();
+}
+
+/**
+ * 1º: a categoria usada da última vez no grupo para a mesma descrição ("Feira do sábado" → Mercado);
+ * 2º: palavras-chave. O usuário sempre pode trocar.
+ */
+export function suggestCategory(description: string, history?: Record<string, ExpenseCategory>): ExpenseCategory | null {
+  const learned = history?.[normalizeDescription(description)];
+  if (learned) return learned;
   const text = description.toLocaleLowerCase("pt-BR");
   for (const [re, cat] of rules) if (re.test(text)) return cat;
   return null;

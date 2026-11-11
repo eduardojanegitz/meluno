@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "motion/react";
-import { CalendarDays, Check, Loader2, Minus, Plus, StickyNote, Users } from "lucide-react";
+import { CalendarDays, Check, Loader2, Minus, Plus, Repeat, StickyNote, Users } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { expenseCategories, type ExpenseCategory } from "@/lib/categories";
 import { suggestCategory } from "@/lib/category-suggest";
@@ -50,6 +50,8 @@ type Props = {
   members: FormMember[];
   viewerMemberId: string;
   initial?: ExpenseInitial;
+  /** Descrição normalizada → categoria usada da última vez no grupo. */
+  categoryHints?: Record<string, ExpenseCategory>;
 };
 
 /** "33,33" → 3333 (escala × 100). Retorna null se inválido. */
@@ -77,7 +79,7 @@ export function ExpenseForm(props: Props) {
   return <ExpenseFormInner key={`${generation}-${props.initial?.version ?? "new"}`} {...props} onSaved={() => setGeneration((g) => g + 1)} />;
 }
 
-function ExpenseFormInner({ group, members, viewerMemberId, initial, onSaved }: Props & { onSaved: () => void }) {
+function ExpenseFormInner({ group, members, viewerMemberId, initial, categoryHints, onSaved }: Props & { onSaved: () => void }) {
   const router = useRouter();
   const editing = Boolean(initial);
   const create = useAction(createExpenseAction);
@@ -93,6 +95,7 @@ function ExpenseFormInner({ group, members, viewerMemberId, initial, onSaved }: 
   const [notes, setNotes] = useState(initial?.notes ?? "");
   const [showMore, setShowMore] = useState(Boolean(initial?.notes));
   const [showCategories, setShowCategories] = useState(false);
+  const [repeat, setRepeat] = useState<"" | "WEEKLY" | "MONTHLY">("");
   const [submitted, setSubmitted] = useState(false);
 
   // Pagadores
@@ -144,7 +147,7 @@ function ExpenseFormInner({ group, members, viewerMemberId, initial, onSaved }: 
 
   function onDescription(value: string) {
     setDescription(value);
-    if (!categoryTouched) setCategory(suggestCategory(value) ?? "OTHER");
+    if (!categoryTouched) setCategory(suggestCategory(value, categoryHints) ?? "OTHER");
   }
 
   // Nota fiscal lida: itens viram a divisão por item (sem taxa de serviço, já está tudo na nota).
@@ -161,7 +164,7 @@ function ExpenseFormInner({ group, members, viewerMemberId, initial, onSaved }: 
     if (r.date) setDate(r.date);
     if (!description.trim()) {
       setDescription(r.store ?? "Compra com nota fiscal");
-      if (!categoryTouched) setCategory(suggestCategory(r.store ?? "") ?? "GROCERIES");
+      if (!categoryTouched) setCategory(suggestCategory(r.store ?? "", categoryHints) ?? "GROCERIES");
     }
     if (!notes.trim()) {
       setNotes(`NFC-e ${r.uf} · chave ${r.chave.replace(/(\d{4})(?=\d)/g, "$1 ")}`);
@@ -280,10 +283,14 @@ function ExpenseFormInner({ group, members, viewerMemberId, initial, onSaved }: 
       await update.run({ ...payload, expenseId, version: initial.version }, { successMessage: "Despesa atualizada", onSuccess: go });
     } else {
       await create.run(
-        { ...payload, expenseId },
+        { ...payload, expenseId, repeat: repeat && !itemsMode ? repeat : undefined },
         {
           onSuccess: () => {
-            celebrate({ title: "Anotado!", subtitle: `${description.trim()} entrou na conta.`, mood: "happy" });
+            celebrate({
+              title: "Anotado!",
+              subtitle: repeat && !itemsMode ? `${description.trim()} vai se repetir ${repeat === "WEEKLY" ? "toda semana" : "todo mês"}.` : `${description.trim()} entrou na conta.`,
+              mood: "happy",
+            });
             go();
           },
         },
@@ -413,7 +420,24 @@ function ExpenseFormInner({ group, members, viewerMemberId, initial, onSaved }: 
         >
           <StickyNote className="text-muted-foreground size-4" aria-hidden="true" /> Observação
         </button>
+        {!editing && !itemsMode ? (
+          <label className="bg-card hover:bg-muted focus-within:ring-ring relative inline-flex h-9 cursor-pointer items-center gap-1.5 rounded-full border px-3 text-sm focus-within:ring-2">
+            <Repeat className="text-muted-foreground size-4" aria-hidden="true" />
+            <span className="sr-only">Repetir</span>
+            <select value={repeat} onChange={(e) => setRepeat(e.target.value as typeof repeat)} className="bg-transparent outline-none">
+              <option value="">Não repete</option>
+              <option value="WEEKLY">Toda semana</option>
+              <option value="MONTHLY">Todo mês</option>
+            </select>
+          </label>
+        ) : null}
       </div>
+      {repeat && !itemsMode && !editing ? (
+        <p className="text-muted-foreground mt-2 text-xs">
+          Lançamos sozinhos {repeat === "WEEKLY" ? "toda semana, no mesmo dia da semana" : `todo dia ${Number(date.slice(8, 10))} (ou no último dia do mês, se for mais curto)`}, com o mesmo valor e a
+          mesma divisão. Dá para pausar nas configurações do grupo.
+        </p>
+      ) : null}
       {showMore ? (
         <div className="mt-3">
           <Label htmlFor="notes" className="sr-only">

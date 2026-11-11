@@ -8,6 +8,7 @@ import { civilDateToDb, dbDateToCivil } from "@/schemas/common";
 import { createExpenseSchema, expenseRefSchema, updateExpenseSchema } from "@/schemas/expense";
 import { computeItemSplit, computeSplit, PayerError, SplitError, validatePayers, type SplitRequest } from "@/server/domain/split";
 import { MoneyError } from "@/server/domain/money";
+import { nextOccurrence } from "@/server/domain/recurrence";
 import { assertGroupMembers, assertWritable, lockGroup, requireMember, type Tx } from "./access";
 import { logActivity, notifyGroup } from "./activity";
 
@@ -103,7 +104,8 @@ function snapshot(e: ExpenseWithParts) {
   };
 }
 
-export async function createExpense(viewer: Viewer, raw: z.input<typeof createExpenseSchema>) {
+/** `recurringExpenseId`: uso interno do agendador, ao gerar uma ocorrência. */
+export async function createExpense(viewer: Viewer, raw: z.input<typeof createExpenseSchema>, opts: { recurringExpenseId?: string } = {}) {
   const input = createExpenseSchema.parse(raw);
   // O id (gerado no cliente) é a semente determinística do arredondamento.
   const { expenseId } = input;
@@ -124,6 +126,29 @@ export async function createExpense(viewer: Viewer, raw: z.input<typeof createEx
 
       await assertGroupMembers(tx, input.groupId, [...payers.map((p) => p.memberId), ...splits.map((s) => s.memberId)]);
 
+      // "Repetir": o modelo guarda pagadores e divisão como vieram; esta é a 1ª ocorrência.
+      let recurringExpenseId = opts.recurringExpenseId;
+      if (input.repeat && !recurringExpenseId) {
+        const anchorDay = Number(input.date.slice(8, 10));
+        const template = await tx.recurringExpense.create({
+          data: {
+            groupId: input.groupId,
+            createdByMemberId: me.id,
+            description: input.description,
+            amountMinor: input.amountMinor,
+            category: input.category,
+            notes: input.notes,
+            payers: input.payers,
+            split: input.split,
+            frequency: input.repeat,
+            anchorDay,
+            nextDate: civilDateToDb(nextOccurrence(input.date, input.repeat, anchorDay)),
+          },
+          select: { id: true },
+        });
+        recurringExpenseId = template.id;
+      }
+
       const created = await tx.expense.create({
         data: {
           id: expenseId,
@@ -137,6 +162,7 @@ export async function createExpense(viewer: Viewer, raw: z.input<typeof createEx
           notes: input.notes,
           idempotencyKey: expenseId,
           createdByMemberId: me.id,
+          recurringExpenseId,
           payers: { create: payers.map((p) => ({ memberId: p.memberId, amountMinor: p.amountMinor })) },
           splits: { create: splits.map((s) => ({ memberId: s.memberId, amountMinor: s.amountMinor, inputValue: s.inputValue })) },
           serviceBp: items?.serviceBp ?? null,
@@ -308,10 +334,19 @@ export async function getExpense(viewer: Viewer, groupId: string, expenseId: str
       orderBy: { createdAt: "desc" },
       select: { id: true, type: true, createdAt: true, payload: true, actor: { select: { displayName: true } } },
     });
+    const receipt = await tx.expenseReceipt.findUnique({ where: { expenseId }, select: { createdAt: true, sizeBytes: true } });
+    const recurring = expense.recurringExpenseId
+      ? await tx.recurringExpense.findFirst({ where: { id: expense.recurringExpenseId, deletedAt: null }, select: { frequency: true, status: true } })
+      : null;
+    const writable = !me.group.archivedAt && me.status === "ACTIVE";
     return {
       expense: { ...expense, date: dbDateToCivil(expense.date) },
       history,
-      canEdit: !me.group.archivedAt && (expense.createdByMemberId === me.id || me.role === "ADMIN"),
+      canEdit: writable && (expense.createdByMemberId === me.id || me.role === "ADMIN"),
+      // Comprovante: quem lançou, quem pagou ou um administrador (mesma regra de services/receipts.ts).
+      canManageReceipt: writable && (expense.createdByMemberId === me.id || me.role === "ADMIN" || expense.payers.some((p) => p.memberId === me.id)),
+      receipt,
+      recurring,
       viewerMemberId: me.id,
     };
   });

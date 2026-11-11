@@ -37,7 +37,7 @@ async function NewExpense({ params }: Props) {
     <>
       <PageHeader backHref={`/grupos/${groupId}`} backLabel="Cancelar" title="Nova despesa" subtitle={data.group.name} />
       <PageBody>
-        <ExpenseForm group={data.group} members={data.members} viewerMemberId={data.viewerMemberId} />
+        <ExpenseForm group={data.group} members={data.members} viewerMemberId={data.viewerMemberId} categoryHints={data.categoryHints} />
       </PageBody>
     </>
   );
