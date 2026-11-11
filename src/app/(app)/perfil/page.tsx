@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
-import { ChevronRight, MailOpen } from "lucide-react";
+import { ChevronRight, Download, MailOpen } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { PageBody, PageHeader, SectionTitle } from "@/components/app/page-header";
 import { MemberAvatar } from "@/components/member-avatar";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -67,7 +68,18 @@ async function ProfileContent() {
 
       <section className="space-y-2">
         <SectionTitle>Privacidade</SectionTitle>
-        <p className="text-muted-foreground text-sm">Você pode excluir sua conta e seus dados pessoais a qualquer momento.</p>
+        <p className="text-muted-foreground text-sm">
+          Baixe uma cópia dos seus dados (conta, grupos, sua parte nas despesas e acertos) ou exclua sua conta a qualquer momento. Veja a{" "}
+          <Link href="/privacidade" className="text-foreground font-semibold underline-offset-4 hover:underline">
+            política de privacidade
+          </Link>
+          .
+        </p>
+        <Button asChild variant="outline" className="w-full">
+          <a href="/api/conta/exportar" download>
+            <Download aria-hidden="true" /> Baixar meus dados
+          </a>
+        </Button>
         <DeleteAccount hasPassword={profile.hasPassword} />
       </section>
     </div>

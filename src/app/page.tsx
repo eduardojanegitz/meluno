@@ -139,6 +139,14 @@ export default function Home() {
       <footer className="text-muted-foreground mx-auto flex w-full max-w-6xl flex-col items-center justify-between gap-3 border-t px-4 py-8 text-sm sm:flex-row sm:px-8">
         <Logo size="sm" className="text-foreground" />
         <p className="text-center">O Meluno organiza contas; não processa pagamentos.</p>
+        <nav aria-label="Informações legais" className="flex gap-4">
+          <Link href="/privacidade" className="hover:text-foreground underline-offset-4 hover:underline">
+            Privacidade
+          </Link>
+          <Link href="/termos" className="hover:text-foreground underline-offset-4 hover:underline">
+            Termos
+          </Link>
+        </nav>
       </footer>
     </div>
   );

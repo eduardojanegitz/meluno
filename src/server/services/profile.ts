@@ -12,6 +12,13 @@ export const updateProfileSchema = z.object({
   emailOnExpense: z.boolean(),
   emailOnSettlement: z.boolean(),
   emailOnInvitation: z.boolean(),
+  /** Vai no Pix Copia e Cola de quem te paga. Vazio = "BRASIL". */
+  pixCity: z
+    .string()
+    .trim()
+    .max(40, "Use no máximo 40 caracteres.")
+    .nullish()
+    .transform((v) => (v === undefined ? undefined : v || null)),
 });
 
 export const pixKeySchema = z
@@ -60,7 +67,7 @@ export async function getProfile(viewer: Viewer) {
     ...user,
     hasPassword: user.accounts.some((a) => a.providerId === "credential"),
     hasGoogle: user.accounts.some((a) => a.providerId === "google"),
-    preferences: user.preferences ?? { defaultCurrency: "BRL", emailOnExpense: false, emailOnSettlement: true, emailOnInvitation: true },
+    preferences: user.preferences ?? { defaultCurrency: "BRL", emailOnExpense: false, emailOnSettlement: true, emailOnInvitation: true, pixCity: null },
   };
 }
 
@@ -75,6 +82,7 @@ export async function updateProfile(viewer: Viewer, raw: z.input<typeof updatePr
       emailOnExpense: input.emailOnExpense,
       emailOnSettlement: input.emailOnSettlement,
       emailOnInvitation: input.emailOnInvitation,
+      ...(input.pixCity !== undefined ? { pixCity: input.pixCity } : {}),
     };
     await tx.userPreferences.upsert({ where: { userId: viewer.userId }, create: { userId: viewer.userId, ...prefs }, update: prefs });
   });
@@ -113,9 +121,11 @@ export async function getMemberPixKeys(viewer: Viewer, groupId: string, memberId
   if (!me) throw new AppError("NOT_FOUND", "Grupo não encontrado.");
   const target = await db.groupMember.findFirst({ where: { id: memberId, groupId, status: "ACTIVE" }, select: { userId: true } });
   if (!target?.userId) return [];
-  return db.pixKey.findMany({
+  const keys = await db.pixKey.findMany({
     where: { userId: target.userId },
     orderBy: [{ isDefault: "desc" }, { createdAt: "asc" }],
     select: { id: true, type: true, value: true, label: true },
   });
+  const prefs = await db.userPreferences.findUnique({ where: { userId: target.userId }, select: { pixCity: true } });
+  return keys.map((k) => ({ ...k, city: prefs?.pixCity ?? null }));
 }

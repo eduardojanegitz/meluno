@@ -22,7 +22,7 @@ const pixTypes = [
 
 type Profile = {
   name: string;
-  preferences: { defaultCurrency: string; emailOnExpense: boolean; emailOnSettlement: boolean; emailOnInvitation: boolean };
+  preferences: { defaultCurrency: string; emailOnExpense: boolean; emailOnSettlement: boolean; emailOnInvitation: boolean; pixCity: string | null };
   pixKeys: { id: string; type: string; value: string; label: string | null; isDefault: boolean }[];
 };
 
@@ -33,6 +33,7 @@ export function ProfileForm({ profile }: { profile: Profile }) {
   const save = useAction(updateProfileAction);
   const [name, setName] = useState(profile.name);
   const [currency, setCurrency] = useState(profile.preferences.defaultCurrency);
+  const [pixCity, setPixCity] = useState(profile.preferences.pixCity ?? "");
   const [prefs] = useState({
     emailOnExpense: profile.preferences.emailOnExpense,
     emailOnSettlement: profile.preferences.emailOnSettlement,
@@ -47,7 +48,7 @@ export function ProfileForm({ profile }: { profile: Profile }) {
       onSubmit={(e) => {
         e.preventDefault();
         void save.run(
-          { name, defaultCurrency: currency as (typeof currencies)[number], ...prefs },
+          { name, defaultCurrency: currency as (typeof currencies)[number], pixCity, ...prefs },
           { successMessage: "Perfil atualizado", onSuccess: () => router.refresh() },
         );
       }}
@@ -67,6 +68,23 @@ export function ProfileForm({ profile }: { profile: Profile }) {
                 <option key={c}>{c}</option>
               ))}
             </select>
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="p-city">Sua cidade</Label>
+            <Input
+              id="p-city"
+              value={pixCity}
+              onChange={(e) => setPixCity(e.target.value)}
+              maxLength={40}
+              autoComplete="address-level2"
+              placeholder="Ex.: São Paulo"
+              aria-describedby="p-city-hint"
+              aria-invalid={save.fieldErrors.pixCity ? true : undefined}
+            />
+            <p id="p-city-hint" className="text-muted-foreground text-xs">
+              Vai no Pix Copia e Cola de quem te paga. Alguns bancos recusam o código sem ela.
+            </p>
+            {save.fieldErrors.pixCity ? <p className="text-destructive text-sm">{save.fieldErrors.pixCity}</p> : null}
           </div>
         </div>
       </section>

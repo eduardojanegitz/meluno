@@ -65,6 +65,20 @@ const itemsCreate = (items: ItemsData) =>
     : undefined;
 
 type ExpenseWithParts = Prisma.ExpenseGetPayload<{ include: typeof expenseInclude }>;
+type ExpenseRow = Prisma.ExpenseGetPayload<object>;
+
+/**
+ * Carrega pagadores, divisões e itens **uma consulta por vez**.
+ * Com `include` de várias relações o Prisma 7 dispara as consultas em paralelo; dentro de
+ * uma transação (uma única conexão) isso gera o aviso do `pg` que vira erro no pg@9.
+ */
+async function withParts<E extends ExpenseRow>(tx: Tx, expense: E): Promise<E & Pick<ExpenseWithParts, "payers" | "splits" | "items">> {
+  const where = { expenseId: expense.id };
+  const payers = await tx.expensePayer.findMany({ where, select: expenseInclude.payers.select });
+  const splits = await tx.expenseSplit.findMany({ where, select: expenseInclude.splits.select });
+  const items = await tx.expenseItem.findMany({ where, orderBy: expenseInclude.items.orderBy, select: expenseInclude.items.select });
+  return { ...expense, payers, splits, items };
+}
 
 /** Retrato completo para o histórico (permite reconstruir qualquer versão). */
 function snapshot(e: ExpenseWithParts) {
@@ -110,7 +124,7 @@ export async function createExpense(viewer: Viewer, raw: z.input<typeof createEx
 
       await assertGroupMembers(tx, input.groupId, [...payers.map((p) => p.memberId), ...splits.map((s) => s.memberId)]);
 
-      const expense = await tx.expense.create({
+      const created = await tx.expense.create({
         data: {
           id: expenseId,
           groupId: input.groupId,
@@ -129,8 +143,8 @@ export async function createExpense(viewer: Viewer, raw: z.input<typeof createEx
           feesMinor: items?.feesMinor ?? null,
           items: itemsCreate(items),
         },
-        include: expenseInclude,
       });
+      const expense = await withParts(tx, created);
 
       await logActivity(tx, {
         groupId: input.groupId,
@@ -165,8 +179,9 @@ export async function createExpense(viewer: Viewer, raw: z.input<typeof createEx
 
 async function loadEditable(tx: Tx, viewer: Viewer, groupId: string, expenseId: string) {
   const me = await requireMember(tx, viewer, groupId);
-  const expense = await tx.expense.findFirst({ where: { id: expenseId, groupId }, include: expenseInclude });
-  if (!expense) throw new AppError("NOT_FOUND", "Despesa não encontrada.");
+  const row = await tx.expense.findFirst({ where: { id: expenseId, groupId } });
+  if (!row) throw new AppError("NOT_FOUND", "Despesa não encontrada.");
+  const expense = await withParts(tx, row);
   if (expense.createdByMemberId !== me.id && me.role !== "ADMIN") {
     throw new AppError("FORBIDDEN", "Só quem registrou a despesa ou um administrador pode alterá-la.");
   }
@@ -213,7 +228,7 @@ export async function updateExpense(viewer: Viewer, raw: z.input<typeof updateEx
       data: splits.map((s) => ({ expenseId: expense.id, memberId: s.memberId, amountMinor: s.amountMinor, inputValue: s.inputValue })),
     });
 
-    const after = await tx.expense.findUniqueOrThrow({ where: { id: expense.id }, include: expenseInclude });
+    const after = await withParts(tx, await tx.expense.findUniqueOrThrow({ where: { id: expense.id } }));
     await logActivity(tx, {
       groupId: input.groupId,
       actorMemberId: me.id,
@@ -283,15 +298,11 @@ export async function restoreExpense(viewer: Viewer, raw: z.input<typeof expense
 export async function getExpense(viewer: Viewer, groupId: string, expenseId: string) {
   return db.$transaction(async (tx) => {
     const me = await requireMember(tx, viewer, groupId);
-    const expense = await tx.expense.findFirst({
-      where: { id: expenseId, groupId },
-      include: {
-        ...expenseInclude,
-        createdBy: { select: { id: true, displayName: true } },
-        updatedBy: { select: { displayName: true } },
-      },
-    });
-    if (!expense) throw new AppError("NOT_FOUND", "Despesa não encontrada.");
+    const row = await tx.expense.findFirst({ where: { id: expenseId, groupId } });
+    if (!row) throw new AppError("NOT_FOUND", "Despesa não encontrada.");
+    const createdBy = await tx.groupMember.findUniqueOrThrow({ where: { id: row.createdByMemberId }, select: { id: true, displayName: true } });
+    const updatedBy = row.updatedByMemberId ? await tx.groupMember.findUnique({ where: { id: row.updatedByMemberId }, select: { displayName: true } }) : null;
+    const expense = { ...(await withParts(tx, row)), createdBy, updatedBy };
     const history = await tx.activityLog.findMany({
       where: { groupId, entityType: "expense", entityId: expenseId },
       orderBy: { createdAt: "desc" },

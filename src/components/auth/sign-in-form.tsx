@@ -76,6 +76,19 @@ export function SignInForm({ googleEnabled }: { googleEnabled: boolean }) {
           Criar conta
         </Link>
       </p>
+      {googleEnabled ? (
+        <p className="text-muted-foreground mt-3 text-center text-xs">
+          Entrar com Google pela primeira vez cria uma conta e significa concordar com os{" "}
+          <Link href="/termos" className="underline underline-offset-4">
+            Termos
+          </Link>{" "}
+          e a{" "}
+          <Link href="/privacidade" className="underline underline-offset-4">
+            Privacidade
+          </Link>
+          .
+        </p>
+      ) : null}
     </>
   );
 }

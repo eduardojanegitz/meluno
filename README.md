@@ -88,6 +88,26 @@ docs/adr/              decisões de produto e arquitetura
 
 A CI (`.github/workflows/ci.yml`) roda typecheck, lint, testes unitários e de integração contra um Postgres real, build de produção e `npm audit`.
 
+### Checklist de lançamento
+
+1. **Dados do responsável:** preencha `src/lib/legal.ts` (nome, CPF/CNPJ, e-mail de contato, foro e provedores). Enquanto houver campos entre colchetes, `/privacidade` e `/termos` mostram um aviso de rascunho. Revise os dois textos com um advogado.
+2. **Região:** use a região de São Paulo na Vercel (`gru1`) e no Neon (`sa-east-1`).
+   - Deixa o app mais rápido para quem está no Brasil.
+   - Algumas SEFAZ recusam acesso de fora do país, o que afeta a leitura de NFC-e.
+3. **Domínio:** aponte o domínio para a Vercel e use-o em `APP_URL`. HTTPS é obrigatório para instalar o app e usar a câmera.
+4. **Google:**
+   - na credencial OAuth, adicione `https://seu-dominio` (origem) e `https://seu-dominio/api/auth/callback/google` (redirecionamento);
+   - na tela de consentimento, informe os links de `/privacidade` e `/termos`, verifique o domínio no Search Console e mude o público para "Em produção".
+5. **Resend:** verifique o domínio de envio (registros DNS) e use um `EMAIL_FROM` desse domínio.
+6. **Depois do deploy, no celular:**
+   - criar conta e confirmar o e-mail;
+   - entrar com Google;
+   - instalar o app;
+   - ler uma NFC-e real;
+   - criar grupo, despesa e acerto;
+   - abrir o Pix Copia e Cola no app do banco;
+   - baixar os dados e excluir uma conta de teste.
+
 ### Segurança em produção
 
 - Cabeçalhos definidos em `next.config.ts`: CSP, HSTS, `X-Frame-Options: DENY`, `nosniff`, `Referrer-Policy`, `Permissions-Policy`.

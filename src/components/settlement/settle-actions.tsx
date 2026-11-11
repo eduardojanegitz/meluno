@@ -26,7 +26,7 @@ type Props = {
   amountMinor: number;
 };
 
-type PixKey = { id: string; type: string; value: string; label: string | null };
+type PixKey = { id: string; type: string; value: string; label: string | null; city: string | null };
 
 /**
  * Ações de uma sugestão de acerto, conforme o papel de quem vê:
@@ -83,7 +83,7 @@ function PixPayButton({ groupId, groupName, viewerMemberId, to, amountMinor }: P
 
   const key = keys?.[0];
   const payload = useMemo(
-    () => (key ? buildPixPayload({ key: key.value, name: to.name, amountMinor, description: `Meluno ${groupName}` }) : null),
+    () => (key ? buildPixPayload({ key: key.value, name: to.name, city: key.city ?? undefined, amountMinor, description: `Meluno ${groupName}` }) : null),
     [key, to.name, amountMinor, groupName],
   );
 

@@ -71,6 +71,17 @@ export function SignUpForm({ googleEnabled }: { googleEnabled: boolean }) {
           {isSubmitting ? <Loader2 className="animate-spin" aria-hidden="true" /> : null}
           Criar conta
         </Button>
+        <p className="text-muted-foreground text-center text-xs">
+          Ao criar a conta, você concorda com os{" "}
+          <Link href="/termos" className="text-foreground underline underline-offset-4">
+            Termos de uso
+          </Link>{" "}
+          e a{" "}
+          <Link href="/privacidade" className="text-foreground underline underline-offset-4">
+            Política de privacidade
+          </Link>
+          .
+        </p>
       </form>
       <p className="text-muted-foreground mt-6 text-center text-sm">
         Já tem conta?{" "}

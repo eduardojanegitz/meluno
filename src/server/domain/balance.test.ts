@@ -151,7 +151,7 @@ describe("simplificação de dívidas", () => {
     fc.array(fc.integer({ min: -1_000_000, max: 1_000_000 }), { minLength: 1, maxLength: maxSize - 1 }).map((values) => {
       const m = new Map<string, number>();
       values.forEach((v, i) => m.set(`m${String(i).padStart(2, "0")}`, v));
-      m.set("zz", -values.reduce((a, b) => a + b, 0)); // fecha em zero
+      m.set("zz", 0 - values.reduce((a, b) => a + b, 0)); // fecha em zero (0 - x evita o -0 quando a soma é 0)
       return m;
     });
 

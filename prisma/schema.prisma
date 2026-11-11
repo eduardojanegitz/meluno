@@ -104,6 +104,8 @@ model UserPreferences {
   emailOnExpense        Boolean  @default(false)
   emailOnSettlement     Boolean  @default(true)
   emailOnInvitation     Boolean  @default(true)
+  /// Cidade do recebedor no Pix Copia e Cola (campo obrigatório do BR Code).
+  pixCity               String?  @db.VarChar(40)
   updatedAt             DateTime @updatedAt
 
   @@map("user_preferences")

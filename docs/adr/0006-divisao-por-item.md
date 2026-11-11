@@ -35,6 +35,6 @@ Quem não consumiu nenhum item não paga nada, nem serviço. A soma das partes �
 
 O cliente Prisma em cache no `globalThis`, que evita abrir conexões a cada HMR, passou a ser recriado quando a classe gerada muda. Isso acontece depois de `prisma generate`. Antes, o servidor de desenvolvimento continuava com o cliente antigo até reiniciar, e falhava ao usar tabelas novas (lembretes, itens).
 
-## Pendência conhecida
+## Pendência conhecida (resolvida na ADR 0009)
 
 Testes que criam despesas mostram o aviso do `pg` "client.query() when the client is already executing a query". A origem provável é a criação aninhada (pagadores, divisões e itens numa única chamada `create`) executada pelo Prisma 7. Ainda não está confirmado. O aviso não afeta o resultado hoje, mas vira erro no `pg@9`. Investigar antes de atualizar o `pg`.

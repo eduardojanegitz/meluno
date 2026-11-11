@@ -96,6 +96,7 @@ export async function sendPaymentReminder(viewer: Viewer, raw: z.input<typeof re
       me.group.currency === "BRL"
         ? await tx.pixKey.findFirst({ where: { userId: viewer.userId }, orderBy: [{ isDefault: "desc" }, { createdAt: "asc" }], select: { value: true } })
         : null;
+    const pixCity = pixKey ? (await tx.userPreferences.findUnique({ where: { userId: viewer.userId }, select: { pixCity: true } }))?.pixCity : null;
 
     return {
       amountMinor: debt.amountMinor,
@@ -103,7 +104,9 @@ export async function sendPaymentReminder(viewer: Viewer, raw: z.input<typeof re
       groupName: me.group.name,
       creditorName: me.displayName,
       debtorEmail: input.channel === "EMAIL" ? debtor.user!.email : null,
-      pixCode: pixKey ? buildPixPayload({ key: pixKey.value, name: me.displayName, amountMinor: debt.amountMinor, description: `Meluno ${me.group.name}` }) : undefined,
+      pixCode: pixKey
+        ? buildPixPayload({ key: pixKey.value, name: me.displayName, city: pixCity ?? undefined, amountMinor: debt.amountMinor, description: `Meluno ${me.group.name}` })
+        : undefined,
     };
   });
 

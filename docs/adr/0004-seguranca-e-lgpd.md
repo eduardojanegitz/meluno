@@ -65,7 +65,6 @@ Descrições e observações de despesas escritas pela pessoa continuam. Elas fa
 
 ## Ainda não implementado (fora do MVP)
 
-- Política de privacidade e termos de uso: o texto depende de definição jurídica.
-- Exportação dos dados pessoais (portabilidade).
+- ~~Política de privacidade e termos de uso~~ e ~~exportação dos dados pessoais~~: feitos na ADR 0009. Os textos ainda precisam de revisão jurídica.
 - Alerta por e-mail de login em dispositivo novo.
 - 2FA.
