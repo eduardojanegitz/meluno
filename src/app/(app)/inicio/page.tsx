@@ -148,11 +148,11 @@ function BalanceHero({ totals }: { totals: CurrencyTotals[] }) {
       <div className="mt-5 grid grid-cols-2 gap-3">
         <div className="rounded-2xl bg-white/8 p-3">
           <p className="text-xs text-white/70">A receber</p>
-          <Money amountMinor={main.receivableMinor} currency={main.currency} className="text-mint font-semibold" />
+          <Money amountMinor={main.receivableMinor} currency={main.currency} className={main.receivableMinor > 0 ? "text-mint font-semibold" : "font-semibold text-white"} />
         </div>
         <div className="rounded-2xl bg-white/8 p-3">
           <p className="text-xs text-white/70">Você deve</p>
-          <Money amountMinor={main.payableMinor} currency={main.currency} className="font-semibold text-[#ffb8a6]" />
+          <Money amountMinor={main.payableMinor} currency={main.currency} className={main.payableMinor > 0 ? "font-semibold text-[#ffb8a6]" : "font-semibold text-white"} />
         </div>
       </div>
       {others.length > 0 ? (

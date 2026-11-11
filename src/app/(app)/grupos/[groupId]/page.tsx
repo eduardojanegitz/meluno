@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { groupPageMetadata } from "@/lib/page-titles";
 import Link from "next/link";
 import { Suspense } from "react";
 import { notFound } from "next/navigation";
@@ -21,7 +22,9 @@ import { AppError } from "@/server/errors";
 import { getGroupDetail } from "@/server/services/queries";
 import { idSchema } from "@/schemas/common";
 
-export const metadata: Metadata = { title: "Grupo" };
+export function generateMetadata({ params }: PageProps<"/grupos/[groupId]">): Promise<Metadata> {
+  return groupPageMetadata(params, "Grupo", (t) => t.group);
+}
 
 type Props = PageProps<"/grupos/[groupId]">;
 

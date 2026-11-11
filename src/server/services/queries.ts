@@ -253,3 +253,20 @@ export async function assertGroupExistsForViewer(viewer: Viewer, groupId: string
   const ok = await db.groupMember.findFirst({ where: { groupId, userId: viewer.userId, status: "ACTIVE" }, select: { id: true } });
   if (!ok) throw new AppError("NOT_FOUND", "Grupo não encontrado.");
 }
+
+/**
+ * Nomes para o título da página (metadata). Nunca lança: sem sessão, sem
+ * acesso ou id inválido → null, e a página usa o título genérico.
+ * Mesma regra de acesso das telas: só grupos em que o usuário é membro ativo.
+ */
+export async function getPageTitles(userId: string, groupId: string, expenseId?: string) {
+  const member = await db.groupMember.findFirst({
+    where: { groupId, userId, status: "ACTIVE" },
+    select: { group: { select: { name: true } } },
+  });
+  if (!member) return null;
+  const expense = expenseId
+    ? await db.expense.findFirst({ where: { id: expenseId, groupId }, select: { description: true } })
+    : null;
+  return { group: member.group.name, expense: expense?.description ?? null };
+}

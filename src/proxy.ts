@@ -19,7 +19,7 @@ export function proxy(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  if (hasSession && AUTH_PAGES.slice(0, 2).includes(pathname)) {
+  if (hasSession && (pathname === "/" || AUTH_PAGES.slice(0, 2).includes(pathname))) {
     return NextResponse.redirect(new URL("/inicio", request.url));
   }
 
@@ -27,5 +27,5 @@ export function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/((?!api|_next/static|_next/image|icon.svg|manifest.webmanifest|.*\\.(?:png|jpg|svg|webp|ico)$).*)"],
+  matcher: ["/((?!api|_next/static|_next/image|icon.svg|apple-icon|icons/|manifest.webmanifest|.*\\.(?:png|jpg|svg|webp|ico)$).*)"],
 };

@@ -7,7 +7,7 @@
 /*
  * Meluno design tokens.
  * Contrastes verificados (WCAG AA ≥ 4.5 para texto):
- *   text-muted #64747D / bg #F8FAF9 = 4.62
+ *   text-muted #5C6C75 / bg #F8FAF9 = 5.19 (sobre muted #EDF3F0 = 4.84)
  *   positive #166F48 / positive-soft #E3F8EC = 5.56
  *   negative #A8432E / negative-soft #FBEAE5 = 5.13
  *   ink #172D40 / mint #B7F7D5 = 11.63
@@ -66,6 +66,7 @@
 }
 
 :root {
+  color-scheme: light;
   --radius: 0.75rem;
 
   --ink: #172d40;
@@ -84,7 +85,7 @@
   --secondary: #edf3f0;
   --secondary-foreground: #172d40;
   --muted: #edf3f0;
-  --muted-foreground: #64747d;
+  --muted-foreground: #5c6c75;
   --accent: #e7f1ec;
   --accent-foreground: #172d40;
   --destructive: #a8432e;
@@ -101,6 +102,7 @@
 }
 
 .dark {
+  color-scheme: dark;
   --ink: #0d1a24;
   --mint: #b7f7d5;
   --mint-foreground: #0d1a24;
@@ -144,10 +146,19 @@
     @apply bg-background text-foreground font-sans antialiased;
     font-feature-settings: "cv11", "ss01";
   }
+  /* Jakarta tem espaço entre palavras estreito: tracking negativo só em títulos grandes. */
+  h1,
+  h2 {
+    @apply font-display tracking-tight;
+  }
+  h3 {
+    @apply font-display;
+  }
   h1,
   h2,
-  h3 {
-    @apply font-display tracking-tight;
+  h3,
+  .font-display {
+    word-spacing: 0.08em;
   }
 }
 

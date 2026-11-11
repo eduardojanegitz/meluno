@@ -23,6 +23,16 @@ export const metadata: Metadata = {
   description:
     "Organize gastos, compartilhe contas e descubra quem deve para quem. Tudo em um só lugar.",
   applicationName: "Meluno",
+  metadataBase: new URL(process.env.APP_URL ?? "http://localhost:3000"),
+  appleWebApp: { capable: true, title: "Meluno", statusBarStyle: "default" },
+  formatDetection: { telephone: false },
+  openGraph: {
+    type: "website",
+    locale: "pt_BR",
+    siteName: "Meluno",
+    title: "Meluno — Compartilhe momentos. Não complicações.",
+    description: "Organize gastos, compartilhe contas e descubra quem deve para quem.",
+  },
 };
 
 export const viewport: Viewport = {
