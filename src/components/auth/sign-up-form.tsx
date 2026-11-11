@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
+import { safeNextPath } from "@/lib/safe-redirect";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Loader2, MailCheck } from "lucide-react";
@@ -18,6 +20,7 @@ type Values = z.input<typeof signUpSchema>;
 type Parsed = z.output<typeof signUpSchema>;
 
 export function SignUpForm({ googleEnabled }: { googleEnabled: boolean }) {
+  const next = safeNextPath(useSearchParams().get("next"));
   const [serverError, setServerError] = useState<string | null>(null);
   const [sentTo, setSentTo] = useState<string | null>(null);
   const form = useForm<Values, unknown, Parsed>({
@@ -29,7 +32,7 @@ export function SignUpForm({ googleEnabled }: { googleEnabled: boolean }) {
 
   const onSubmit = form.handleSubmit(async (values) => {
     setServerError(null);
-    const { error } = await authClient.signUp.email({ ...values, callbackURL: "/inicio" });
+    const { error } = await authClient.signUp.email({ ...values, callbackURL: next });
     if (error) {
       setServerError(authErrorMessage(error));
       return;
@@ -37,14 +40,14 @@ export function SignUpForm({ googleEnabled }: { googleEnabled: boolean }) {
     setSentTo(values.email);
   });
 
-  if (sentTo) return <CheckInbox email={sentTo} />;
+  if (sentTo) return <CheckInbox email={sentTo} next={next} />;
 
   return (
     <>
       <AuthHeading title="Crie sua conta" description="Leva menos de um minuto. Depois é só convidar quem divide com você." />
       {googleEnabled ? (
         <>
-          <GoogleButton label="Continuar com Google" callbackURL="/inicio" />
+          <GoogleButton label="Continuar com Google" callbackURL={next} />
           <Divider>ou com e-mail</Divider>
         </>
       ) : null}
@@ -75,12 +78,12 @@ export function SignUpForm({ googleEnabled }: { googleEnabled: boolean }) {
   );
 }
 
-function CheckInbox({ email }: { email: string }) {
+function CheckInbox({ email, next }: { email: string; next: string }) {
   const [sending, setSending] = useState(false);
 
   async function resend() {
     setSending(true);
-    const { error } = await authClient.sendVerificationEmail({ email, callbackURL: "/inicio" });
+    const { error } = await authClient.sendVerificationEmail({ email, callbackURL: next });
     setSending(false);
     if (error) toast.error(authErrorMessage(error));
     else toast.success("Enviamos um novo link.");
@@ -102,7 +105,7 @@ function CheckInbox({ email }: { email: string }) {
           Reenviar e-mail
         </Button>
         <Button asChild variant="ghost" className="w-full">
-          <Link href="/entrar">Já confirmei, quero entrar</Link>
+          <Link href={next === "/inicio" ? "/entrar" : `/entrar?next=${encodeURIComponent(next)}`}>Já confirmei, quero entrar</Link>
         </Button>
       </div>
       <p className="text-muted-foreground mt-6 text-xs">Não encontrou? Verifique a caixa de spam ou promoções.</p>

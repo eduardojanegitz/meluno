@@ -11,7 +11,7 @@ type ExpenseRowProps = {
   /** Efeito líquido da despesa para o usuário: > 0 emprestou, < 0 deve, 0 não participa. */
   userImpactMinor: number;
   currency?: string;
-  dateLabel: string;
+  dateLabel: React.ReactNode;
   className?: string;
 };
 

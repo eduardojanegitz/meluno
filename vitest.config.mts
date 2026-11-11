@@ -29,6 +29,8 @@ export default defineConfig({
           include: ["tests/integration/**/*.test.ts"],
           environment: "node",
           globalSetup: ["tests/support/global-setup.ts"],
+          // Os services usam o cliente da aplicação: aponta-o para o banco de testes.
+          env: { DATABASE_URL: process.env.TEST_DATABASE_URL ?? "", NODE_ENV: "test" },
           // Testes de integração compartilham um banco: execução sequencial.
           fileParallelism: false,
         },

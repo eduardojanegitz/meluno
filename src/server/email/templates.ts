@@ -40,6 +40,21 @@ export function verifyEmailMessage(to: string, name: string, url: string): Email
   };
 }
 
+export function invitationMessage(to: string, inviterName: string, groupName: string, url: string): EmailMessage {
+  return {
+    to,
+    subject: `${inviterName} convidou você para "${groupName}" no Meluno`,
+    html: layout({
+      title: `Você foi convidado para ${escapeHtml(groupName)}`,
+      intro: `${escapeHtml(inviterName)} está usando o Meluno para dividir as despesas do grupo e quer você junto.`,
+      cta: "Ver convite",
+      url,
+      outro: "O convite expira em 14 dias. Se você não conhece essa pessoa, pode ignorar esta mensagem.",
+    }),
+    text: `${inviterName} convidou você para o grupo "${groupName}" no Meluno.\n\nVer convite:\n${url}\n\nO convite expira em 14 dias.`,
+  };
+}
+
 export function resetPasswordMessage(to: string, url: string): EmailMessage {
   return {
     to,

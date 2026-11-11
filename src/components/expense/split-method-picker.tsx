@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils";
 export const splitMethods = {
   EQUAL: { label: "Igual", icon: Equal },
   EXACT: { label: "Valores", icon: Hash },
-  PERCENT: { label: "%", icon: Percent },
+  PERCENT: { label: "Porcent.", icon: Percent },
   SHARES: { label: "Partes", icon: PieChart },
 } as const;
 

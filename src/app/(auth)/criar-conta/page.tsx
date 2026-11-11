@@ -1,9 +1,14 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import { googleEnabled } from "@/lib/env";
 import { SignUpForm } from "@/components/auth/sign-up-form";
 
 export const metadata: Metadata = { title: "Criar conta" };
 
 export default function SignUpPage() {
-  return <SignUpForm googleEnabled={googleEnabled()} />;
+  return (
+    <Suspense>
+      <SignUpForm googleEnabled={googleEnabled()} />
+    </Suspense>
+  );
 }

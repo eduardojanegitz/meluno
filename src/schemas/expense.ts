@@ -1,0 +1,45 @@
+import { z } from "zod";
+import { amountMinorSchema, civilDateSchema, idSchema } from "./common";
+
+export const expenseCategorySchema = z.enum(["FOOD", "GROCERIES", "TRANSPORT", "HOUSING", "UTILITIES", "LEISURE", "TRAVEL", "EVENTS", "OTHER"]);
+export const splitMethodSchema = z.enum(["EQUAL", "EXACT", "PERCENT", "SHARES"]);
+
+const expenseFields = {
+  groupId: idSchema,
+  description: z.string().trim().min(1, "O que foi essa despesa?").max(120, "Use no máximo 120 caracteres."),
+  amountMinor: amountMinorSchema,
+  date: civilDateSchema,
+  category: expenseCategorySchema.default("OTHER"),
+  notes: z.string().trim().max(1000, "Use no máximo 1000 caracteres.").optional().transform((v) => v || undefined),
+  payers: z
+    .array(z.object({ memberId: idSchema, amountMinor: z.number().int().positive() }))
+    .min(1, "Informe quem pagou.")
+    .max(100),
+  split: z.object({
+    method: splitMethodSchema,
+    /** value: EXACT = centavos; PERCENT = pontos-base; SHARES = partes × 100; ignorado em EQUAL. */
+    entries: z
+      .array(z.object({ memberId: idSchema, value: z.number().int().min(0).optional() }))
+      .min(1, "Escolha quem participou.")
+      .max(100),
+  }),
+};
+
+/**
+ * O id é gerado no cliente: serve de chave de idempotência (reenvios não
+ * duplicam) e de semente do arredondamento — a prévia exibida antes de salvar
+ * é exatamente o que será gravado.
+ */
+export const createExpenseSchema = z.object({ ...expenseFields, expenseId: idSchema });
+
+export const updateExpenseSchema = z.object({
+  ...expenseFields,
+  expenseId: idSchema,
+  /** Versão que o usuário estava editando (lock otimista). */
+  version: z.number().int().positive(),
+});
+
+export const expenseRefSchema = z.object({ groupId: idSchema, expenseId: idSchema });
+
+export type CreateExpenseInput = z.input<typeof createExpenseSchema>;
+export type UpdateExpenseInput = z.input<typeof updateExpenseSchema>;

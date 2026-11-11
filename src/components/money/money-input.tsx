@@ -3,6 +3,7 @@
 import { forwardRef, useCallback } from "react";
 import { cn } from "@/lib/utils";
 import { DEFAULT_CURRENCY, formatMoney } from "@/lib/format";
+import { nextMoneyValue } from "@/lib/money-entry";
 
 /** Teto por valor (R$ 10.000.000,00) — mantém tudo bem dentro de inteiros seguros. */
 export const MAX_AMOUNT_MINOR = 1_000_000_000;
@@ -25,15 +26,9 @@ export const MoneyInput = forwardRef<HTMLInputElement, MoneyInputProps>(function
   { value, onValueChange, currency = DEFAULT_CURRENCY, max = MAX_AMOUNT_MINOR, size = "default", className, ...props },
   ref,
 ) {
-  const maxDigits = String(max).length;
-
   const handleChange = useCallback(
-    (e: React.ChangeEvent<HTMLInputElement>) => {
-      const digits = e.target.value.replace(/\D/g, "").replace(/^0+/, "").slice(0, maxDigits);
-      const next = digits === "" ? 0 : Number.parseInt(digits, 10);
-      onValueChange(Math.min(next, max));
-    },
-    [max, maxDigits, onValueChange],
+    (e: React.ChangeEvent<HTMLInputElement>) => onValueChange(nextMoneyValue(value, e.target.value, currency, max)),
+    [currency, max, onValueChange, value],
   );
 
   const moveCaretToEnd = (el: HTMLInputElement) => {

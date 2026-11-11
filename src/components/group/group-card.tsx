@@ -3,6 +3,7 @@ import { cn } from "@/lib/utils";
 import { formatRelativeDay } from "@/lib/format";
 import { groupCategories, type GroupCategory } from "@/lib/categories";
 import { BalanceLabel } from "@/components/balance/balance-label";
+import { RelativeTime } from "@/components/app/relative-time";
 
 type GroupCardProps = {
   name: string;
@@ -51,7 +52,7 @@ export function GroupCard({
         <p className="truncate font-semibold">{name}</p>
         <p className="text-muted-foreground truncate text-xs">
           {memberCount} {memberCount === 1 ? "pessoa" : "pessoas"}
-          {lastActivityAt ? ` · ${formatRelativeDay(lastActivityAt, now)}` : " · sem despesas ainda"}
+          {lastActivityAt ? (now ? ` · ${formatRelativeDay(lastActivityAt, now)}` : <> · <RelativeTime date={lastActivityAt} /></>) : " · nada registrado ainda"}
         </p>
       </div>
       <BalanceLabel amountMinor={balanceMinor} currency={currency} size="sm" />

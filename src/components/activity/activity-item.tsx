@@ -14,21 +14,23 @@ const kindIcon: Record<ActivityKind, { icon: LucideIcon; className: string }> = 
 
 type ActivityItemProps = {
   actorName: string;
+  /** Nome usado nas iniciais do avatar (ex.: o nome real quando o rótulo é "Você"). */
+  avatarName?: string;
   actorId: string;
   kind: ActivityKind;
   /** Frase já composta, ex.: <>adicionou <strong>Supermercado</strong></>. */
   children: React.ReactNode;
-  context: string;
-  timeLabel: string;
+  context?: string;
+  timeLabel: React.ReactNode;
   className?: string;
 };
 
-export function ActivityItem({ actorName, actorId, kind, children, context, timeLabel, className }: ActivityItemProps) {
+export function ActivityItem({ actorName, avatarName, actorId, kind, children, context, timeLabel, className }: ActivityItemProps) {
   const { icon: Icon, className: badge } = kindIcon[kind];
   return (
     <div className={cn("flex gap-3 py-3", className)}>
       <div className="relative shrink-0">
-        <MemberAvatar name={actorName} colorKey={actorId} />
+        <MemberAvatar name={avatarName ?? actorName} colorKey={actorId} />
         <span
           className={cn(
             "ring-card absolute -right-1 -bottom-1 flex size-[18px] items-center justify-center rounded-full ring-2",
@@ -43,7 +45,8 @@ export function ActivityItem({ actorName, actorId, kind, children, context, time
           <span className="font-semibold">{actorName}</span> {children}
         </p>
         <p className="text-muted-foreground mt-0.5 text-xs">
-          {context} · {timeLabel}
+          {context ? <>{context} · </> : null}
+          {timeLabel}
         </p>
       </div>
     </div>
