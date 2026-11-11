@@ -1,4 +1,5 @@
 import "server-only";
+import { scheduleDelivery } from "@/server/notifications/deliver";
 import { createHash, randomBytes } from "node:crypto";
 import type { z } from "zod";
 import { db } from "@/server/db";
@@ -97,9 +98,11 @@ export async function createInvitation(viewer: Viewer, raw: z.input<typeof creat
     if (input.kind === "EMAIL") {
       const invitedUser = await tx.user.findUnique({ where: { email: input.email }, select: { id: true } });
       if (invitedUser) {
-        await tx.notification.create({
+        const n = await tx.notification.create({
           data: { userId: invitedUser.id, type: "INVITATION_RECEIVED", groupId: input.groupId, payload: { groupName: me.group.name, by: me.displayName } },
+          select: { id: true },
         });
+        scheduleDelivery([n.id]);
       }
     }
     return { invitationId: invitation.id, groupName: me.group.name, inviterName: me.displayName, expiresAt: invitation.expiresAt };

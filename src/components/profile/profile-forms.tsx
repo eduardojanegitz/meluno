@@ -34,11 +34,6 @@ export function ProfileForm({ profile }: { profile: Profile }) {
   const [name, setName] = useState(profile.name);
   const [currency, setCurrency] = useState(profile.preferences.defaultCurrency);
   const [pixCity, setPixCity] = useState(profile.preferences.pixCity ?? "");
-  const [prefs] = useState({
-    emailOnExpense: profile.preferences.emailOnExpense,
-    emailOnSettlement: profile.preferences.emailOnSettlement,
-    emailOnInvitation: profile.preferences.emailOnInvitation,
-  });
 
 
   return (
@@ -48,7 +43,7 @@ export function ProfileForm({ profile }: { profile: Profile }) {
       onSubmit={(e) => {
         e.preventDefault();
         void save.run(
-          { name, defaultCurrency: currency as (typeof currencies)[number], pixCity, ...prefs },
+          { name, defaultCurrency: currency as (typeof currencies)[number], pixCity },
           { successMessage: "Perfil atualizado", onSuccess: () => router.refresh() },
         );
       }}
@@ -88,9 +83,6 @@ export function ProfileForm({ profile }: { profile: Profile }) {
           </div>
         </div>
       </section>
-
-      {/* Preferências de e-mail ficam ocultas até os envios de despesas/pagamentos existirem
-          (evita um controle que aparenta funcionar sem efeito). Os valores são preservados. */}
 
       <Button type="submit" disabled={save.pending}>
         {save.pending ? <Loader2 className="animate-spin" /> : <Check />} Salvar perfil

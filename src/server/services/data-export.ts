@@ -25,8 +25,10 @@ export async function exportMyData(viewer: Viewer) {
   });
   const preferences = await db.userPreferences.findUnique({
     where: { userId: viewer.userId },
-    select: { defaultCurrency: true, emailOnExpense: true, emailOnSettlement: true, emailOnInvitation: true, pixCity: true, updatedAt: true },
+    select: { defaultCurrency: true, emailOnExpense: true, emailOnSettlement: true, emailOnInvitation: true, emailWeeklySummary: true, pixCity: true, updatedAt: true },
   });
+  // Aparelhos com push: só o nome e as datas (o endpoint funciona como credencial de envio).
+  const pushDevices = await db.pushSubscription.findMany({ where: { userId: viewer.userId }, select: { device: true, createdAt: true, lastUsedAt: true } });
   const pixKeys = await db.pixKey.findMany({ where: { userId: viewer.userId }, select: { type: true, value: true, label: true, isDefault: true, createdAt: true } });
   const memberships = await db.groupMember.findMany({
     where: { userId: viewer.userId },
@@ -123,6 +125,7 @@ export async function exportMyData(viewer: Viewer) {
     account: { ...user, loginMethods: accounts.map((a) => ({ method: a.providerId === "credential" ? "email-senha" : a.providerId, since: a.createdAt })) },
     sessions,
     preferences,
+    pushDevices,
     pixKeys,
     groups,
     notifications,

@@ -9,9 +9,11 @@ import { currencySchema, idSchema } from "@/schemas/common";
 export const updateProfileSchema = z.object({
   name: nameSchema,
   defaultCurrency: currencySchema,
-  emailOnExpense: z.boolean(),
-  emailOnSettlement: z.boolean(),
-  emailOnInvitation: z.boolean(),
+  // Preferências de aviso agora têm ação própria (updateNotificationPrefs); aqui ficam opcionais
+  // para não sobrescrever um ajuste feito depois que o formulário abriu.
+  emailOnExpense: z.boolean().optional(),
+  emailOnSettlement: z.boolean().optional(),
+  emailOnInvitation: z.boolean().optional(),
   /** Vai no Pix Copia e Cola de quem te paga. Vazio = "BRASIL". */
   pixCity: z
     .string()
@@ -67,7 +69,7 @@ export async function getProfile(viewer: Viewer) {
     ...user,
     hasPassword: user.accounts.some((a) => a.providerId === "credential"),
     hasGoogle: user.accounts.some((a) => a.providerId === "google"),
-    preferences: user.preferences ?? { defaultCurrency: "BRL", emailOnExpense: false, emailOnSettlement: true, emailOnInvitation: true, pixCity: null },
+    preferences: user.preferences ?? { defaultCurrency: "BRL", emailOnExpense: false, emailOnSettlement: true, emailOnInvitation: true, emailWeeklySummary: false, pixCity: null },
   };
 }
 
@@ -79,13 +81,24 @@ export async function updateProfile(viewer: Viewer, raw: z.input<typeof updatePr
     await tx.groupMember.updateMany({ where: { userId: viewer.userId, status: "ACTIVE" }, data: { displayName: input.name } });
     const prefs = {
       defaultCurrency: input.defaultCurrency,
-      emailOnExpense: input.emailOnExpense,
-      emailOnSettlement: input.emailOnSettlement,
-      emailOnInvitation: input.emailOnInvitation,
+      ...(input.emailOnExpense !== undefined ? { emailOnExpense: input.emailOnExpense } : {}),
+      ...(input.emailOnSettlement !== undefined ? { emailOnSettlement: input.emailOnSettlement } : {}),
+      ...(input.emailOnInvitation !== undefined ? { emailOnInvitation: input.emailOnInvitation } : {}),
       ...(input.pixCity !== undefined ? { pixCity: input.pixCity } : {}),
     };
     await tx.userPreferences.upsert({ where: { userId: viewer.userId }, create: { userId: viewer.userId, ...prefs }, update: prefs });
   });
+}
+
+export const notificationPrefsSchema = z
+  .object({ emailOnExpense: z.boolean(), emailOnSettlement: z.boolean(), emailWeeklySummary: z.boolean() })
+  .partial()
+  .refine((v) => Object.keys(v).length > 0, "Nada para salvar.");
+
+/** Um interruptor por vez, salvo na hora. */
+export async function updateNotificationPrefs(viewer: Viewer, raw: z.input<typeof notificationPrefsSchema>) {
+  const data = notificationPrefsSchema.parse(raw);
+  await db.userPreferences.upsert({ where: { userId: viewer.userId }, create: { userId: viewer.userId, ...data }, update: data });
 }
 
 export async function addPixKey(viewer: Viewer, raw: z.input<typeof pixKeySchema>) {

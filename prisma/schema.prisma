@@ -31,6 +31,7 @@ model User {
   accounts      Account[]
   preferences   UserPreferences?
   pixKeys       PixKey[]
+  pushSubscriptions PushSubscription[]
   memberships   GroupMember[]
   notifications Notification[]
 
@@ -106,6 +107,10 @@ model UserPreferences {
   emailOnInvitation     Boolean  @default(true)
   /// Cidade do recebedor no Pix Copia e Cola (campo obrigatório do BR Code).
   pixCity               String?  @db.VarChar(40)
+  /// Resumo semanal por e-mail (opt-in).
+  emailWeeklySummary    Boolean  @default(false)
+  /// Último resumo enviado: impede duplicar se o agendador rodar duas vezes.
+  weeklySummarySentAt   DateTime?
   updatedAt             DateTime @updatedAt
 
   @@map("user_preferences")
@@ -120,6 +125,23 @@ enum PixKeyType {
 }
 
 /// Visível apenas a quem compartilha grupo com o dono da chave.
+/// Inscrição de notificação push (uma por navegador/aparelho).
+model PushSubscription {
+  id         String   @id @default(uuid(7)) @db.Uuid
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  endpoint   String   @unique @db.VarChar(1000)
+  p256dh     String   @db.VarChar(200)
+  auth       String   @db.VarChar(100)
+  /// Só para a pessoa reconhecer o aparelho ("Chrome no Android").
+  device     String?  @db.VarChar(80)
+  createdAt  DateTime @default(now())
+  lastUsedAt DateTime?
+
+  @@index([userId])
+  @@map("push_subscription")
+}
+
 model PixKey {
   id        String     @id @default(uuid(7)) @db.Uuid
   userId    String

@@ -15,6 +15,12 @@ const schema = z
     GOOGLE_CLIENT_SECRET: z.string().optional().default(""),
     RESEND_API_KEY: z.string().optional().default(""),
     EMAIL_FROM: z.string().min(3).default("Meluno <nao-responda@meluno.app>"),
+    // Notificações push (Web Push/VAPID). Gere com: npx web-push generate-vapid-keys
+    VAPID_PUBLIC_KEY: z.string().optional().default(""),
+    VAPID_PRIVATE_KEY: z.string().optional().default(""),
+    VAPID_SUBJECT: z.string().optional().default("mailto:nao-responda@meluno.app"),
+    // Protege as rotas de agendamento (/api/cron/*). A Vercel envia "Authorization: Bearer <CRON_SECRET>".
+    CRON_SECRET: z.string().optional().default(""),
   })
   .superRefine((env, ctx) => {
     if (env.NODE_ENV === "production" && !env.RESEND_API_KEY) {
@@ -38,3 +44,4 @@ export function env(): ServerEnv {
 }
 
 export const googleEnabled = () => Boolean(env().GOOGLE_CLIENT_ID && env().GOOGLE_CLIENT_SECRET);
+export const pushEnabled = () => Boolean(env().VAPID_PUBLIC_KEY && env().VAPID_PRIVATE_KEY);

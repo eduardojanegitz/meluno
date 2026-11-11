@@ -1,5 +1,6 @@
 import "server-only";
 import type { ActivityType, NotificationType, Prisma } from "@/generated/prisma/client";
+import { scheduleDelivery } from "@/server/notifications/deliver";
 import type { Tx } from "./access";
 
 type LogInput = {
@@ -47,5 +48,8 @@ export async function notifyGroup(
     .map((m) => m.userId!)
     .filter((id) => id !== exceptUserId)
     .map((userId) => ({ userId, type, groupId, payload }));
-  if (data.length) await tx.notification.createMany({ data });
+  if (data.length === 0) return;
+  const created = await tx.notification.createManyAndReturn({ data, select: { id: true } });
+  // E-mail e push saem depois da resposta, só se a transação tiver sido gravada.
+  scheduleDelivery(created.map((n) => n.id));
 }

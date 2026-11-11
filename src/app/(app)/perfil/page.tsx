@@ -9,7 +9,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { SignOutButton } from "@/components/auth/sign-out-button";
 import { PixKeys, ProfileForm } from "@/components/profile/profile-forms";
 import { SignInMethods } from "@/components/profile/sign-in-methods";
-import { googleEnabled } from "@/lib/env";
+import { env, googleEnabled, pushEnabled } from "@/lib/env";
+import { NotificationSettings } from "@/components/profile/notification-settings";
 import { InstallCard } from "@/components/install/install-app";
 import { ThemeChoice } from "@/components/profile/theme-choice";
 import { DeleteAccount } from "@/components/profile/delete-account";
@@ -54,6 +55,18 @@ async function ProfileContent() {
       <PixKeys keys={profile.pixKeys} />
 
       <InstallCard />
+
+      <section id="notificacoes" className="scroll-mt-20">
+        <SectionTitle>Notificações</SectionTitle>
+        <NotificationSettings
+          prefs={{
+            emailOnExpense: profile.preferences.emailOnExpense,
+            emailOnSettlement: profile.preferences.emailOnSettlement,
+            emailWeeklySummary: profile.preferences.emailWeeklySummary,
+          }}
+          vapidPublicKey={pushEnabled() ? env().VAPID_PUBLIC_KEY : null}
+        />
+      </section>
 
       <section>
         <SectionTitle>Aparência</SectionTitle>

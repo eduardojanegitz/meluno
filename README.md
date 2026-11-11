@@ -82,6 +82,8 @@ docs/adr/              decisões de produto e arquitetura
 | `RESEND_API_KEY` | sim em produção | o build falha sem ela |
 | `EMAIL_FROM` | sim | remetente verificado no Resend |
 | `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` | não | habilitam login com Google; callback `{APP_URL}/api/auth/callback/google` |
+| `VAPID_PUBLIC_KEY` / `VAPID_PRIVATE_KEY` / `VAPID_SUBJECT` | não | notificações push; `npx web-push generate-vapid-keys` |
+| `CRON_SECRET` | para o resumo semanal | protege `/api/cron/*` |
 
 4. **Previews:** use uma *branch* do Neon por ambiente de preview, para que migrations de PRs não toquem o banco de produção.
 5. **Depois do primeiro deploy:** crie uma conta, confirme o e-mail recebido e faça um fluxo completo (grupo → despesa → acerto).
@@ -99,12 +101,17 @@ A CI (`.github/workflows/ci.yml`) roda typecheck, lint, testes unitários e de i
    - na credencial OAuth, adicione `https://seu-dominio` (origem) e `https://seu-dominio/api/auth/callback/google` (redirecionamento);
    - na tela de consentimento, informe os links de `/privacidade` e `/termos`, verifique o domínio no Search Console e mude o público para "Em produção".
 5. **Resend:** verifique o domínio de envio (registros DNS) e use um `EMAIL_FROM` desse domínio.
-6. **Depois do deploy, no celular:**
+6. **Push e resumo semanal:**
+   - gere as chaves com `npx web-push generate-vapid-keys` e configure `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY` e `VAPID_SUBJECT` (`mailto:` do contato);
+   - crie `CRON_SECRET` (`openssl rand -base64 32`). A Vercel o envia sozinha para o agendador do `vercel.json`;
+   - sem as chaves, a opção de push não aparece no Perfil; sem o segredo, a rota do resumo responde 503.
+7. **Depois do deploy, no celular:**
    - criar conta e confirmar o e-mail;
    - entrar com Google;
    - instalar o app;
    - ler uma NFC-e real;
    - criar grupo, despesa e acerto;
+   - ativar as notificações e usar "Enviar uma notificação de teste" (no iPhone, com o app instalado);
    - abrir o Pix Copia e Cola no app do banco;
    - baixar os dados e excluir uma conta de teste.
 

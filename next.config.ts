@@ -50,6 +50,8 @@ const nextConfig: NextConfig = {
   async headers() {
     return [
       { source: "/(.*)", headers: securityHeaders },
+      // O service worker precisa ser revalidado sempre, senão atualizações demoram a chegar.
+      { source: "/sw.js", headers: [{ key: "Cache-Control", value: "no-cache" }, { key: "Content-Type", value: "application/javascript; charset=utf-8" }] },
       // Páginas com token na URL nunca devem ser indexadas.
       { source: "/convites/:token", headers: [{ key: "X-Robots-Tag", value: "noindex" }] },
       { source: "/redefinir-senha", headers: [{ key: "X-Robots-Tag", value: "noindex" }] },

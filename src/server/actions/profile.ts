@@ -10,6 +10,7 @@ import { cookies, headers } from "next/headers";
 import { auth } from "@/server/auth/auth";
 import { AppError } from "@/server/errors";
 import * as account from "@/server/services/account";
+import * as push from "@/server/services/push";
 
 export const updateProfileAction = authedAction("profile.update", profile.updateProfileSchema, (input, viewer) => profile.updateProfile(viewer, input));
 export const addPixKeyAction = authedAction("pix.add", profile.pixKeySchema, async (input, viewer) => {
@@ -17,6 +18,18 @@ export const addPixKeyAction = authedAction("pix.add", profile.pixKeySchema, asy
   return profile.addPixKey(viewer, input);
 });
 export const removePixKeyAction = authedAction("pix.remove", z.object({ id: idSchema }), (input, viewer) => profile.removePixKey(viewer, input.id));
+export const updateNotificationPrefsAction = authedAction("notifications.prefs", profile.notificationPrefsSchema, (input, viewer) =>
+  profile.updateNotificationPrefs(viewer, input),
+);
+export const subscribePushAction = authedAction("push.subscribe", push.subscribeSchema, async (input, viewer) => {
+  await enforceRateLimit(`push-sub:${viewer.userId}`, 20, 3600);
+  return push.subscribePush(viewer, input);
+});
+export const unsubscribePushAction = authedAction("push.unsubscribe", push.endpointSchema, (input, viewer) => push.unsubscribePush(viewer, input));
+export const testPushAction = authedAction("push.test", push.endpointSchema, async (input, viewer) => {
+  await enforceRateLimit(`push-test:${viewer.userId}`, 5, 600);
+  return push.testPush(viewer, input);
+});
 export const markNotificationsReadAction = authedAction("notifications.read", z.object({}), (_input, viewer) => markNotificationsRead(viewer));
 
 export const deleteAccountAction = authedAction("account.delete", account.deleteAccountSchema, async (input, viewer) => {

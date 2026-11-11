@@ -32,6 +32,10 @@ export default function PrivacyPage() {
           <strong>Chaves Pix e cidade</strong>, se você cadastrar, para montar o Pix Copia e Cola de quem vai te pagar.
         </li>
         <li>
+          <strong>Notificações:</strong> se você ativar o push, guardamos o endereço de entrega que o navegador gera para este aparelho e um nome como &ldquo;Chrome no
+          Android&rdquo;. Suas escolhas de e-mail (despesas, pagamentos, resumo semanal) ficam no Perfil.
+        </li>
+        <li>
           <strong>Segurança:</strong> sessões de login com endereço IP e navegador, e contadores de tentativas (para bloquear abuso).
         </li>
         <li>
@@ -65,8 +69,8 @@ export default function PrivacyPage() {
           <strong>Pessoas dos seus grupos</strong> veem seu nome, sua foto, os gastos e acertos do grupo e, se você cadastrar, suas chaves Pix e sua cidade.
         </li>
         <li>
-          <strong>Operadores</strong> que nos ajudam a funcionar, só para isso: {LEGAL.hosting} (hospedagem e banco de dados), Resend (envio de e-mails) e Google (login,
-          se você escolher). Alguns ficam fora do Brasil; a transferência segue o art. 33 da LGPD.
+          <strong>Operadores</strong> que nos ajudam a funcionar, só para isso: {LEGAL.hosting} (hospedagem e banco de dados), Resend (envio de e-mails), Google (login,
+          se você escolher) e o serviço de push do seu navegador (Google, Apple, Mozilla ou Microsoft), que recebe só o texto da notificação, criptografado. Alguns ficam fora do Brasil; a transferência segue o art. 33 da LGPD.
         </li>
         <li>
           <strong>SEFAZ</strong> do estado da nota, quando você usa a leitura de NFC-e.

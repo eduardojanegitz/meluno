@@ -90,3 +90,45 @@ export function paymentReminderMessage(
     text: `${data.creditorName} pediu pra te lembrar do acerto de ${data.amountLabel} no grupo "${data.groupName}".${data.pixCode ? `\n\nPix Copia e Cola:\n${data.pixCode}` : ""}\n\nVer no Meluno:\n${data.url}`,
   };
 }
+
+/** Aviso de atividade (despesa nova, acerto…), conforme as preferências da pessoa. */
+export function activityMessage(to: string, data: { title: string; body: string; url: string; settingsUrl: string }): EmailMessage {
+  return {
+    to,
+    subject: `${data.body} · ${data.title}`.slice(0, 140),
+    html: layout({
+      title: escapeHtml(data.title),
+      intro: escapeHtml(data.body),
+      cta: "Ver no Meluno",
+      url: data.url,
+      outro: `Você recebe este e-mail porque ativou esses avisos. Para parar, ajuste em <a href="${escapeHtml(data.settingsUrl)}" style="color:#64747d">Perfil → Notificações</a>.`,
+    }),
+    text: `${data.title}\n\n${data.body}\n\nVer no Meluno:\n${data.url}\n\nPara parar de receber, ajuste em Perfil → Notificações: ${data.settingsUrl}`,
+  };
+}
+
+/** Resumo semanal: saldo em aberto em cada grupo. */
+export function weeklySummaryMessage(
+  to: string,
+  data: { name: string; lines: { groupName: string; label: string; positive: boolean }[]; url: string; settingsUrl: string },
+): EmailMessage {
+  const first = data.name.trim().split(/\s+/)[0] ?? "";
+  const rows = data.lines
+    .map(
+      (l) =>
+        `<tr><td style="padding:6px 0">${escapeHtml(l.groupName)}</td><td align="right" style="padding:6px 0;font-weight:700;color:${l.positive ? "#1f8a5b" : "#c2412d"}">${escapeHtml(l.label)}</td></tr>`,
+    )
+    .join("");
+  return {
+    to,
+    subject: "Seu resumo da semana no Meluno",
+    html: layout({
+      title: `Oi, ${escapeHtml(first)}! Como estão as contas`,
+      intro: `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="font-size:15px">${rows}</table>`,
+      cta: "Abrir o Meluno",
+      url: data.url,
+      outro: `Você recebe este resumo porque ativou em <a href="${escapeHtml(data.settingsUrl)}" style="color:#64747d">Perfil → Notificações</a>. O Meluno não processa pagamentos.`,
+    }),
+    text: `Oi, ${first}! Como estão as contas:\n\n${data.lines.map((l) => `- ${l.groupName}: ${l.label}`).join("\n")}\n\nAbrir o Meluno: ${data.url}\n\nPara parar, ajuste em Perfil → Notificações: ${data.settingsUrl}`,
+  };
+}
