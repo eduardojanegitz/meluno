@@ -59,6 +59,7 @@ export async function getProfile(viewer: Viewer) {
   return {
     ...user,
     hasPassword: user.accounts.some((a) => a.providerId === "credential"),
+    hasGoogle: user.accounts.some((a) => a.providerId === "google"),
     preferences: user.preferences ?? { defaultCurrency: "BRL", emailOnExpense: false, emailOnSettlement: true, emailOnInvitation: true },
   };
 }

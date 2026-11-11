@@ -5,6 +5,7 @@ import { Logo } from "@/components/brand/logo";
 import { LogoMorph } from "@/components/brand/logo-morph";
 import { Melu } from "@/components/brand/melu";
 import { Button } from "@/components/ui/button";
+import { InstallButton } from "@/components/install/install-app";
 import { MemberAvatar } from "@/components/member-avatar";
 import { Money } from "@/components/money/money";
 
@@ -72,6 +73,7 @@ export default function Home() {
               <Button asChild size="lg" variant="outline">
                 <Link href="/entrar">Já tenho conta</Link>
               </Button>
+              <InstallButton variant="secondary" />
             </div>
           </div>
 

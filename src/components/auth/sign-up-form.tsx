@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { safeNextPath } from "@/lib/safe-redirect";
+import { oauthErrorMessage } from "@/lib/oauth-errors";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Loader2, MailCheck } from "lucide-react";
@@ -20,8 +21,10 @@ type Values = z.input<typeof signUpSchema>;
 type Parsed = z.output<typeof signUpSchema>;
 
 export function SignUpForm({ googleEnabled }: { googleEnabled: boolean }) {
-  const next = safeNextPath(useSearchParams().get("next"));
-  const [serverError, setServerError] = useState<string | null>(null);
+  const params = useSearchParams();
+  const next = safeNextPath(params.get("next"));
+  const [serverError, setServerError] = useState<string | null>(() => oauthErrorMessage(params.get("error")));
+  const here = next === "/inicio" ? "/criar-conta" : `/criar-conta?next=${encodeURIComponent(next)}`;
   const [sentTo, setSentTo] = useState<string | null>(null);
   const form = useForm<Values, unknown, Parsed>({
     resolver: zodResolver(signUpSchema),
@@ -47,12 +50,13 @@ export function SignUpForm({ googleEnabled }: { googleEnabled: boolean }) {
       <AuthHeading title="Crie sua conta" description="Leva menos de um minuto. Depois é só convidar quem divide com você." />
       {googleEnabled ? (
         <>
-          <GoogleButton label="Continuar com Google" callbackURL={next} />
+          {serverError ? <FormAlert>{serverError}</FormAlert> : null}
+          <GoogleButton label="Continuar com Google" callbackURL={next} errorCallbackURL={here} />
           <Divider>ou com e-mail</Divider>
         </>
       ) : null}
       <form onSubmit={onSubmit} noValidate className="space-y-4">
-        {serverError ? <FormAlert>{serverError}</FormAlert> : null}
+        {serverError && !googleEnabled ? <FormAlert>{serverError}</FormAlert> : null}
         <Field label="Nome" autoComplete="name" error={errors.name?.message} {...form.register("name")} />
         <Field label="E-mail" type="email" autoComplete="email" inputMode="email" error={errors.email?.message} {...form.register("email")} />
         <Field

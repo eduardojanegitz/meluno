@@ -7,6 +7,9 @@ import { MemberAvatar } from "@/components/member-avatar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { SignOutButton } from "@/components/auth/sign-out-button";
 import { PixKeys, ProfileForm } from "@/components/profile/profile-forms";
+import { SignInMethods } from "@/components/profile/sign-in-methods";
+import { googleEnabled } from "@/lib/env";
+import { InstallCard } from "@/components/install/install-app";
 import { ThemeChoice } from "@/components/profile/theme-choice";
 import { DeleteAccount } from "@/components/profile/delete-account";
 import { requireViewer } from "@/server/auth/session";
@@ -49,18 +52,16 @@ async function ProfileContent() {
       <ProfileForm profile={profile} />
       <PixKeys keys={profile.pixKeys} />
 
+      <InstallCard />
+
       <section>
         <SectionTitle>Aparência</SectionTitle>
         <ThemeChoice />
       </section>
 
       <section className="space-y-3">
-        <SectionTitle>Conta</SectionTitle>
-        {profile.hasPassword ? (
-          <Link href="/recuperar-senha" className="text-muted-foreground hover:text-foreground block text-sm underline-offset-4 hover:underline">
-            Alterar senha
-          </Link>
-        ) : null}
+        <SectionTitle>Formas de entrar</SectionTitle>
+        <SignInMethods hasPassword={profile.hasPassword} hasGoogle={profile.hasGoogle} googleEnabled={googleEnabled()} />
         <SignOutButton />
       </section>
 

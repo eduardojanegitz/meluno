@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
+import { InstallCard } from "@/components/install/install-app";
 import { ArrowLeftRight, BellRing, ChevronRight, MailOpen, Plus, Scale, Users } from "lucide-react";
 import { PageBody, PageHeader, SectionTitle } from "@/components/app/page-header";
 import { GroupCard } from "@/components/group/group-card";
@@ -44,6 +45,8 @@ async function Dashboard() {
       </div>
 
       <BalanceHero totals={data.totals} />
+
+      <InstallCard dismissible />
 
       {invitations.length > 0 ? (
         <Link href="/convites" className="bg-mint/60 dark:bg-mint/15 hover:bg-mint/80 flex items-center gap-3 rounded-2xl px-4 py-3.5 text-sm font-medium transition-colors">

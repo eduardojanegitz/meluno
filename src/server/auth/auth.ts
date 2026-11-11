@@ -56,8 +56,14 @@ function createAuth() {
     account: {
       accountLinking: {
         enabled: true,
-        // O Google só devolve e-mails verificados; vincular à conta existente é seguro.
+        // O Google só devolve e-mails verificados; vincular à conta existente é seguro...
         trustedProviders: ["google"],
+        // ...desde que o e-mail da conta local também esteja confirmado. Sem isso, alguém
+        // poderia criar uma conta com o e-mail de outra pessoa e esperar o dono entrar
+        // pelo Google para herdar o acesso pela senha (pre-account takeover).
+        requireLocalEmailVerified: true,
+        // Conectar pelo Perfil exige o mesmo e-mail do cadastro.
+        allowDifferentEmails: false,
       },
     },
 

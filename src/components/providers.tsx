@@ -5,6 +5,8 @@ import { ThemeProvider } from "next-themes";
 import { Toaster } from "@/components/ui/sonner";
 import { CelebrationHost } from "@/components/celebrate/celebration";
 import { TooltipProvider } from "@/components/ui/tooltip";
+// Registra o ouvinte do convite de instalação logo no carregamento.
+import "@/lib/install";
 
 export function Providers({ children }: { children: React.ReactNode }) {
   return (
