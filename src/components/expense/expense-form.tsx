@@ -16,7 +16,9 @@ import { MoneyInput } from "@/components/money/money-input";
 import { Money } from "@/components/money/money";
 import { MemberAvatar } from "@/components/member-avatar";
 import { SplitMethodPicker, type SplitMethod } from "./split-method-picker";
-import { computeSplit, PayerError, SplitError, validatePayers, PERCENT_SCALE, SHARES_SCALE, type SplitRequest } from "@/server/domain/split";
+import { computeItemSplit, computeSplit, PayerError, SplitError, validatePayers, PERCENT_SCALE, SHARES_SCALE, type SplitRequest } from "@/server/domain/split";
+import { MoneyError } from "@/server/domain/money";
+import { ItemsEditor, newItem, type ItemDraft } from "./items-editor";
 import { useAction } from "@/hooks/use-action";
 import { createExpenseAction, updateExpenseAction } from "@/server/actions/finance";
 import { celebrate } from "@/components/celebrate/celebration";
@@ -34,6 +36,10 @@ export type ExpenseInitial = {
   payers: { memberId: string; amountMinor: number }[];
   splitMethod: SplitMethod;
   splits: { memberId: string; inputValue: number | null }[];
+  /** Só na divisão por item. */
+  items?: { description: string; amountMinor: number; memberIds: string[] }[];
+  serviceBp?: number | null;
+  feesMinor?: number | null;
 };
 
 type Props = {
@@ -109,6 +115,27 @@ function ExpenseFormInner({ group, members, viewerMemberId, initial, onSaved }: 
     initial?.splitMethod === "SHARES" ? Object.fromEntries(initial.splits.map((s) => [s.memberId, s.inputValue ?? SHARES_SCALE])) : {},
   );
 
+  // Divisão por item
+  const [items, setItems] = useState<ItemDraft[]>(() =>
+    initial?.items?.length ? initial.items.map((i) => ({ ...i, key: crypto.randomUUID() })) : [newItem(members.map((m) => m.id))],
+  );
+  const [serviceBp, setServiceBp] = useState(initial?.serviceBp ?? 1000);
+  const [feesMinor, setFeesMinor] = useState(initial?.feesMinor ?? 0);
+  const itemsMode = method === "ITEMS";
+
+  // No modo itens o total é calculado (itens + serviço + taxas), mesma função do servidor.
+  const itemCalc = useMemo(() => {
+    if (!itemsMode) return null;
+    try {
+      return { ok: true as const, ...computeItemSplit({ items, serviceBp, feesMinor }, expenseId) };
+    } catch (error) {
+      const message = error instanceof SplitError || error instanceof MoneyError ? error.message : "Confira os itens.";
+      const itemsMinor = items.reduce((s, i) => s + i.amountMinor, 0);
+      return { ok: false as const, message, itemsMinor };
+    }
+  }, [itemsMode, items, serviceBp, feesMinor, expenseId]);
+  const total = itemsMode ? (itemCalc?.ok ? itemCalc.totalMinor : 0) : amount;
+
   const nameOf = (id: string) => (id === viewerMemberId ? "Você" : (members.find((m) => m.id === id)?.name ?? "Ex-membro"));
   const ordered = useMemo(() => [...members].sort((a, b) => (a.id === viewerMemberId ? -1 : b.id === viewerMemberId ? 1 : 0)), [members, viewerMemberId]);
 
@@ -124,8 +151,8 @@ function ExpenseFormInner({ group, members, viewerMemberId, initial, onSaved }: 
         ? Object.entries(payerAmounts)
             .filter(([, v]) => v > 0)
             .map(([memberId, amountMinor]) => ({ memberId, amountMinor }))
-        : [{ memberId: singlePayer, amountMinor: amount }],
-    [multiPayer, payerAmounts, singlePayer, amount],
+        : [{ memberId: singlePayer, amountMinor: total }],
+    [multiPayer, payerAmounts, singlePayer, total],
   );
 
   const splitEntries = useMemo(() => {
@@ -143,15 +170,20 @@ function ExpenseFormInner({ group, members, viewerMemberId, initial, onSaved }: 
       case "SHARES":
         // Sem ajuste, cada pessoa tem 1 parte.
         return ids.map((memberId) => ({ memberId, value: shares[memberId] ?? SHARES_SCALE })).filter((e) => e.value > 0);
+      case "ITEMS":
+        // Quem aparece em algum item; os valores vêm dos itens.
+        return ids.filter((id) => items.some((i) => i.memberIds.includes(id))).map((memberId) => ({ memberId }));
     }
-  }, [method, members, participants, exact, percent, shares]);
+  }, [method, members, participants, exact, percent, shares, items]);
 
   // Prévia: mesma função e mesma semente (id da despesa) usadas no servidor.
   const preview = useMemo(() => {
-    if (amount <= 0) return { ok: false as const, message: null };
+    if (itemsMode) {
+      if (!itemCalc?.ok) return { ok: false as const, message: itemCalc && itemCalc.itemsMinor > 0 ? itemCalc.message : null };
+    } else if (amount <= 0) return { ok: false as const, message: null };
     try {
-      validatePayers(amount, payers);
-      const splits = computeSplit(amount, { method, entries: splitEntries } as SplitRequest, expenseId);
+      validatePayers(total, payers);
+      const splits = itemsMode && itemCalc?.ok ? itemCalc.shares : computeSplit(amount, { method, entries: splitEntries } as SplitRequest, expenseId);
       return { ok: true as const, splits };
     } catch (error) {
       if (error instanceof SplitError || error instanceof PayerError) {
@@ -169,7 +201,7 @@ function ExpenseFormInner({ group, members, viewerMemberId, initial, onSaved }: 
       }
       return { ok: false as const, message: "Confira os valores." };
     }
-  }, [amount, payers, method, splitEntries, expenseId, group.currency]);
+  }, [itemsMode, itemCalc, total, amount, payers, method, splitEntries, expenseId, group.currency]);
 
   const summary = useMemo(() => {
     if (!preview.ok) return [];
@@ -180,8 +212,8 @@ function ExpenseFormInner({ group, members, viewerMemberId, initial, onSaved }: 
   }, [preview, payers]);
 
   const descriptionError = submitted && !description.trim() ? "O que foi essa despesa?" : null;
-  const amountError = submitted && amount <= 0 ? "Informe o valor." : null;
-  const canSave = amount > 0 && description.trim().length > 0 && preview.ok && !pending;
+  const amountError = submitted && total <= 0 ? (itemsMode ? "Adicione os itens com valor." : "Informe o valor.") : null;
+  const canSave = total > 0 && description.trim().length > 0 && preview.ok && !pending;
 
   async function save() {
     setSubmitted(true);
@@ -189,12 +221,20 @@ function ExpenseFormInner({ group, members, viewerMemberId, initial, onSaved }: 
     const payload = {
       groupId: group.id,
       description: description.trim(),
-      amountMinor: amount,
+      amountMinor: total,
       date,
       category,
       notes: notes.trim() || undefined,
       payers,
-      split: { method, entries: splitEntries },
+      split: itemsMode
+        ? {
+            method,
+            entries: splitEntries,
+            items: items.map((i) => ({ description: i.description.trim() || "Item", amountMinor: i.amountMinor, memberIds: i.memberIds })),
+            serviceBp,
+            feesMinor,
+          }
+        : { method, entries: splitEntries },
     };
     const go = () => {
       router.push(editing ? `/grupos/${group.id}/despesas/${expenseId}` : `/grupos/${group.id}`);
@@ -232,6 +272,12 @@ function ExpenseFormInner({ group, members, viewerMemberId, initial, onSaved }: 
         <Label htmlFor="amount" className="text-muted-foreground block text-xs font-medium tracking-wide uppercase">
           Quanto foi?
         </Label>
+        {itemsMode ? (
+          <p id="amount" className="font-display mt-1 text-[44px] leading-tight font-black tabular" aria-live="polite">
+            {formatMoney(total || (itemCalc && !itemCalc.ok ? itemCalc.itemsMinor : 0), { currency: group.currency })}
+            <span className="text-muted-foreground block text-xs font-semibold">soma dos itens, serviço e taxas</span>
+          </p>
+        ) : (
         <MoneyInput
           id="amount"
           size="hero"
@@ -245,6 +291,7 @@ function ExpenseFormInner({ group, members, viewerMemberId, initial, onSaved }: 
           aria-invalid={amountError ? true : undefined}
           className="mt-1"
         />
+        )}
         {amountError ? <p className="text-destructive mt-1 text-sm">{amountError}</p> : null}
       </div>
 
@@ -346,7 +393,7 @@ function ExpenseFormInner({ group, members, viewerMemberId, initial, onSaved }: 
             className="text-muted-foreground hover:text-foreground text-sm font-medium underline-offset-4 hover:underline"
             onClick={() => {
               setMultiPayer((v) => !v);
-              if (!multiPayer) setPayerAmounts({ [singlePayer]: amount });
+              if (!multiPayer) setPayerAmounts({ [singlePayer]: total });
             }}
           >
             {multiPayer ? "Só uma pessoa" : "Mais de uma pessoa"}
@@ -396,6 +443,31 @@ function ExpenseFormInner({ group, members, viewerMemberId, initial, onSaved }: 
           Como dividir?
         </h2>
         <SplitMethodPicker value={method} onChange={setMethod} />
+        {itemsMode ? (
+          <div className="mt-3">
+            <ItemsEditor
+              items={items}
+              onItems={setItems}
+              serviceBp={serviceBp}
+              onServiceBp={setServiceBp}
+              feesMinor={feesMinor}
+              onFees={setFeesMinor}
+              members={ordered}
+              viewerMemberId={viewerMemberId}
+              currency={group.currency}
+            />
+            {itemCalc?.ok ? (
+              <p className="text-muted-foreground mt-2 text-xs">
+                Itens <Money amountMinor={itemCalc.itemsMinor} currency={group.currency} /> · serviço <Money amountMinor={itemCalc.serviceMinor} currency={group.currency} />
+                {itemCalc.feesMinor > 0 ? (
+                  <>
+                    {" "}· taxas <Money amountMinor={itemCalc.feesMinor} currency={group.currency} />
+                  </>
+                ) : null}
+              </p>
+            ) : null}
+          </div>
+        ) : (
         <ul className="bg-card mt-3 divide-y rounded-2xl border shadow-card">
           {ordered.map((m) => {
             const share = preview.ok ? preview.splits.find((s) => s.memberId === m.id)?.amountMinor : undefined;
@@ -481,6 +553,7 @@ function ExpenseFormInner({ group, members, viewerMemberId, initial, onSaved }: 
             );
           })}
         </ul>
+        )}
         {method === "PERCENT" && Object.keys(percent).length === 0 ? (
           <Button
             type="button"
@@ -527,7 +600,7 @@ function ExpenseFormInner({ group, members, viewerMemberId, initial, onSaved }: 
           </ul>
         ) : (
           <p className={cn("rounded-2xl p-4 text-sm", preview.message ? "bg-warning-soft text-warning" : "bg-muted/60 text-muted-foreground")}>
-            {preview.message ?? "Informe o valor para ver como fica a divisão."}
+            {preview.message ?? (itemsMode ? "Adicione os itens para ver quanto cada um paga." : "Informe o valor para ver como fica a divisão.")}
           </p>
         )}
       </section>
@@ -537,7 +610,7 @@ function ExpenseFormInner({ group, members, viewerMemberId, initial, onSaved }: 
         <div className="mx-auto flex max-w-3xl items-center gap-3 px-4 py-3 sm:px-6">
           <div className="min-w-0 flex-1 text-sm">
             <p className="text-muted-foreground truncate text-xs">{group.name}</p>
-            <p className="truncate font-semibold">{amount > 0 ? formatMoney(amount, { currency: group.currency }) : "—"}</p>
+            <p className="truncate font-semibold">{total > 0 ? formatMoney(total, { currency: group.currency }) : "—"}</p>
           </div>
           <Button type="submit" size="lg" disabled={pending || (submitted && !canSave)} className="min-w-40">
             {pending ? <Loader2 className="animate-spin" aria-hidden="true" /> : <Check aria-hidden="true" />}

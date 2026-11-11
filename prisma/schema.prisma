@@ -211,6 +211,7 @@ model GroupMember {
   settlementsConf  Settlement[]      @relation("SettlementDecidedBy")
   settlementsDel   Settlement[]      @relation("SettlementDeletedBy")
   activity         ActivityLog[]
+  itemsConsumed    ExpenseItemMember[]
   remindersSent    PaymentReminder[] @relation("ReminderCreditor")
   remindersRecv    PaymentReminder[] @relation("ReminderDebtor")
 
@@ -270,6 +271,7 @@ enum SplitMethod {
   EXACT
   PERCENT
   SHARES
+  ITEMS
 }
 
 model Expense {
@@ -300,8 +302,13 @@ model Expense {
   updatedAt         DateTime        @updatedAt
   deletedAt         DateTime?
 
+  /// Divisão por item: taxa de serviço (pontos-base, 1000 = 10%) e taxas fixas.
+  serviceBp         Int?
+  feesMinor         Int?
+
   payers ExpensePayer[]
   splits ExpenseSplit[]
+  items  ExpenseItem[]
 
   @@unique([createdByMemberId, idempotencyKey])
   @@index([groupId, deletedAt, date(sort: Desc)])
@@ -467,4 +474,29 @@ model PaymentReminder {
 
   @@index([groupId, creditorMemberId, debtorMemberId, createdAt(sort: Desc)])
   @@map("payment_reminder")
+}
+
+/// Itens de uma despesa dividida por item (o valor final de cada pessoa fica em ExpenseSplit).
+model ExpenseItem {
+  id          String              @id @default(uuid(7)) @db.Uuid
+  expenseId   String              @db.Uuid
+  expense     Expense             @relation(fields: [expenseId], references: [id], onDelete: Cascade)
+  position    Int
+  description String              @db.VarChar(80)
+  amountMinor Int
+  members     ExpenseItemMember[]
+
+  @@unique([expenseId, position])
+  @@map("expense_item")
+}
+
+model ExpenseItemMember {
+  itemId   String      @db.Uuid
+  item     ExpenseItem @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  memberId String      @db.Uuid
+  member   GroupMember @relation(fields: [memberId], references: [id], onDelete: Restrict)
+
+  @@id([itemId, memberId])
+  @@index([memberId])
+  @@map("expense_item_member")
 }

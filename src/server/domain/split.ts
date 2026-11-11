@@ -193,3 +193,73 @@ export function validatePayers(totalMinor: number, payers: PayerEntry[]): PayerE
   if (sum !== totalMinor) throw new PayerError("PAYERS_SUM_MISMATCH", "A soma paga precisa ser igual ao total.", totalMinor - sum);
   return payers;
 }
+
+/* ── Divisão por item ─────────────────────────────────────────────────────
+ * Cada item é dividido igualmente entre quem consumiu (maior resto, semente
+ * `despesa:item<i>`). Depois, serviço e taxas são rateados entre as pessoas
+ * na proporção do que cada uma consumiu (semente `despesa:extras`).
+ *
+ *   itens        = Σ valor dos itens
+ *   serviço      = arredondamento meio-para-cima de itens × taxa (pontos-base)
+ *   total        = itens + serviço + taxas fixas (entrega, couvert…)
+ *
+ * Tudo em centavos inteiros: a soma das partes é exatamente o total.
+ */
+export const MAX_ITEMS = 60;
+/** Taxa de serviço máxima: 30% (em pontos-base). */
+export const MAX_SERVICE_BP = 3_000;
+
+export type ItemInput = { description: string; amountMinor: number; memberIds: string[] };
+export type ItemSplitInput = { items: ItemInput[]; serviceBp: number; feesMinor: number };
+export type ItemSplitResult = {
+  itemsMinor: number;
+  serviceMinor: number;
+  feesMinor: number;
+  totalMinor: number;
+  shares: SplitShare[];
+  /** Quanto cada pessoa consumiu em itens, antes de serviço e taxas. */
+  consumed: Map<string, number>;
+};
+
+export function serviceAmount(itemsMinor: number, serviceBp: number) {
+  return Number((BigInt(itemsMinor) * BigInt(serviceBp) + 5_000n) / 10_000n);
+}
+
+export function computeItemSplit(input: ItemSplitInput, seed: string): ItemSplitResult {
+  if (input.items.length === 0) throw new SplitError("NO_PARTICIPANTS", "Adicione pelo menos um item.");
+  if (input.items.length > MAX_ITEMS) throw new SplitError("INVALID_VALUE", `Use no máximo ${MAX_ITEMS} itens.`);
+  if (!Number.isSafeInteger(input.serviceBp) || input.serviceBp < 0 || input.serviceBp > MAX_SERVICE_BP) {
+    throw new SplitError("INVALID_VALUE", "A taxa de serviço precisa estar entre 0% e 30%.");
+  }
+  assertMinor(input.feesMinor, "taxas");
+  if (input.feesMinor < 0) throw new SplitError("INVALID_VALUE", "Taxas não podem ser negativas.");
+
+  const consumed = new Map<string, number>();
+  input.items.forEach((item, i) => {
+    assertPositiveAmount(item.amountMinor, "item");
+    if (item.memberIds.length === 0) throw new SplitError("NO_PARTICIPANTS", `Escolha quem consumiu “${item.description || `item ${i + 1}`}”.`);
+    if (new Set(item.memberIds).size !== item.memberIds.length) throw new SplitError("DUPLICATE_MEMBER", "Pessoa repetida num item.");
+    const parts = apportion(item.amountMinor, item.memberIds.map((memberId) => ({ memberId, weight: 1 })), `${seed}:item${i}`);
+    for (const [memberId, v] of parts) consumed.set(memberId, (consumed.get(memberId) ?? 0) + v);
+  });
+  if (consumed.size > MAX_PARTICIPANTS) throw new SplitError("TOO_MANY_PARTICIPANTS", "Participantes demais.");
+
+  const itemsMinor = sumMinor(input.items.map((i) => i.amountMinor));
+  const serviceMinor = serviceAmount(itemsMinor, input.serviceBp);
+  const extras = serviceMinor + input.feesMinor;
+  const totalMinor = itemsMinor + extras;
+  assertPositiveAmount(totalMinor, "total");
+
+  const members = [...consumed.keys()];
+  const extraParts =
+    extras > 0 ? apportion(extras, members.map((memberId) => ({ memberId, weight: consumed.get(memberId)! })), `${seed}:extras`) : new Map<string, number>();
+
+  return {
+    itemsMinor,
+    serviceMinor,
+    feesMinor: input.feesMinor,
+    totalMinor,
+    consumed,
+    shares: members.map((memberId) => ({ memberId, amountMinor: consumed.get(memberId)! + (extraParts.get(memberId) ?? 0), inputValue: null })),
+  };
+}

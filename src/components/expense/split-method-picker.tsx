@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "motion/react";
-import { Equal, Hash, Percent, PieChart } from "lucide-react";
+import { Equal, Hash, ListChecks, Percent, PieChart } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export const splitMethods = {
@@ -9,6 +9,7 @@ export const splitMethods = {
   EXACT: { label: "Valores", icon: Hash },
   PERCENT: { label: "Porcent.", icon: Percent },
   SHARES: { label: "Partes", icon: PieChart },
+  ITEMS: { label: "Itens", icon: ListChecks },
 } as const;
 
 export type SplitMethod = keyof typeof splitMethods;
@@ -26,7 +27,7 @@ export function SplitMethodPicker({ value, onChange, className }: SplitMethodPic
     <div
       role="radiogroup"
       aria-label="Tipo de divisão"
-      className={cn("bg-muted grid grid-cols-4 gap-1 rounded-2xl p-1", className)}
+      className={cn("bg-muted grid grid-cols-5 gap-1 rounded-2xl p-1", className)}
       onKeyDown={(e) => {
         const i = keys.indexOf(value);
         if (e.key === "ArrowRight" || e.key === "ArrowLeft") {
@@ -50,7 +51,7 @@ export function SplitMethodPicker({ value, onChange, className }: SplitMethodPic
             data-value={key}
             onClick={() => onChange(key)}
             className={cn(
-              "focus-visible:ring-ring relative flex h-10 items-center justify-center gap-1.5 rounded-xl text-sm font-semibold transition-colors outline-none focus-visible:ring-2",
+              "focus-visible:ring-ring relative flex h-12 flex-col items-center justify-center gap-0.5 rounded-xl text-[11px] font-bold transition-colors outline-none focus-visible:ring-2 sm:h-10 sm:flex-row sm:gap-1.5 sm:text-sm",
               active ? "text-foreground" : "text-muted-foreground hover:text-foreground",
             )}
           >

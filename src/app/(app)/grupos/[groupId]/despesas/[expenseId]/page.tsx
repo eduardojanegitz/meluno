@@ -25,7 +25,7 @@ export function generateMetadata({ params }: PageProps<"/grupos/[groupId]/despes
 
 type Props = PageProps<"/grupos/[groupId]/despesas/[expenseId]">;
 
-const methodText = { EQUAL: "Dividido igualmente", EXACT: "Valores personalizados", PERCENT: "Por porcentagem", SHARES: "Por partes" } as const;
+const methodText = { EQUAL: "Dividido igualmente", EXACT: "Valores personalizados", PERCENT: "Por porcentagem", SHARES: "Por partes", ITEMS: "Por item" } as const;
 const historyText: Record<string, string> = {
   EXPENSE_CREATED: "registrou a despesa",
   EXPENSE_UPDATED: "editou a despesa",
@@ -132,6 +132,42 @@ async function ExpenseView({ params }: Props) {
             ))}
           </ul>
         </section>
+
+        {expense.splitMethod === "ITEMS" && expense.items.length > 0 ? (
+          <section>
+            <SectionTitle>Itens</SectionTitle>
+            <ul className="bg-card shadow-card divide-y rounded-2xl border">
+              {expense.items.map((it, i) => (
+                <li key={i} className="px-4 py-3">
+                  <div className="flex items-center justify-between gap-3 text-sm">
+                    <span className="min-w-0 truncate font-medium">{it.description}</span>
+                    <Money amountMinor={it.amountMinor} currency={currency} className="font-semibold" />
+                  </div>
+                  <div className="mt-1.5 flex flex-wrap items-center gap-1">
+                    {it.members.map((m) => (
+                      <span key={m.memberId} className="bg-muted inline-flex items-center gap-1 rounded-full py-0.5 pr-2 pl-0.5 text-xs">
+                        <MemberAvatar name={realName(m.memberId)} colorKey={m.memberId} size="sm" className="size-5" />
+                        {name(m.memberId)}
+                      </span>
+                    ))}
+                  </div>
+                </li>
+              ))}
+              {(expense.serviceBp ?? 0) > 0 || (expense.feesMinor ?? 0) > 0 ? (
+                <li className="text-muted-foreground px-4 py-3 text-xs">
+                  {(expense.serviceBp ?? 0) > 0 ? <>Serviço de {((expense.serviceBp ?? 0) / 100).toLocaleString("pt-BR")}%</> : null}
+                  {(expense.serviceBp ?? 0) > 0 && (expense.feesMinor ?? 0) > 0 ? " e " : null}
+                  {(expense.feesMinor ?? 0) > 0 ? (
+                    <>
+                      taxas de <Money amountMinor={expense.feesMinor ?? 0} currency={currency} />
+                    </>
+                  ) : null}{" "}
+                  divididos na proporção do que cada um consumiu.
+                </li>
+              ) : null}
+            </ul>
+          </section>
+        ) : null}
 
         {expense.notes ? (
           <section>

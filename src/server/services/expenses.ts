@@ -6,7 +6,7 @@ import type { Viewer } from "@/server/auth/session";
 import { AppError } from "@/server/errors";
 import { civilDateToDb, dbDateToCivil } from "@/schemas/common";
 import { createExpenseSchema, expenseRefSchema, updateExpenseSchema } from "@/schemas/expense";
-import { computeSplit, PayerError, SplitError, validatePayers, type SplitRequest } from "@/server/domain/split";
+import { computeItemSplit, computeSplit, PayerError, SplitError, validatePayers, type SplitRequest } from "@/server/domain/split";
 import { MoneyError } from "@/server/domain/money";
 import { assertGroupMembers, assertWritable, lockGroup, requireMember, type Tx } from "./access";
 import { logActivity, notifyGroup } from "./activity";
@@ -17,12 +17,25 @@ type ExpenseCore = z.output<typeof createExpenseSchema>;
 function computeFinancials(input: Pick<ExpenseCore, "amountMinor" | "payers" | "split">, seed: string) {
   try {
     const payers = validatePayers(input.amountMinor, input.payers);
+    if (input.split.method === "ITEMS") {
+      const items = input.split.items ?? [];
+      const result = computeItemSplit({ items, serviceBp: input.split.serviceBp ?? 0, feesMinor: input.split.feesMinor ?? 0 }, seed);
+      // O total vem da soma dos itens + serviço + taxas; o cliente precisa ter mandado o mesmo valor.
+      if (result.totalMinor !== input.amountMinor) {
+        throw new SplitError("EXACT_SUM_MISMATCH", "O total não bate com a soma dos itens, serviço e taxas.", result.totalMinor - input.amountMinor);
+      }
+      return {
+        payers,
+        splits: result.shares,
+        items: { list: items, serviceBp: input.split.serviceBp ?? 0, feesMinor: input.split.feesMinor ?? 0 },
+      };
+    }
     const request = {
       method: input.split.method,
       entries: input.split.entries.map((e) => ({ memberId: e.memberId, value: e.value ?? 0 })),
     } as SplitRequest;
     const splits = computeSplit(input.amountMinor, request, seed);
-    return { payers, splits };
+    return { payers, splits, items: null };
   } catch (error) {
     if (error instanceof SplitError || error instanceof PayerError || error instanceof MoneyError) {
       throw new AppError("VALIDATION", error.message, { [error instanceof PayerError ? "payers" : "split"]: error.message });
@@ -34,7 +47,22 @@ function computeFinancials(input: Pick<ExpenseCore, "amountMinor" | "payers" | "
 const expenseInclude = {
   payers: { select: { memberId: true, amountMinor: true } },
   splits: { select: { memberId: true, amountMinor: true, inputValue: true } },
+  items: { orderBy: { position: "asc" }, select: { description: true, amountMinor: true, members: { select: { memberId: true } } } },
 } as const;
+
+type ItemsData = { list: { description: string; amountMinor: number; memberIds: string[] }[]; serviceBp: number; feesMinor: number } | null;
+
+const itemsCreate = (items: ItemsData) =>
+  items
+    ? {
+        create: items.list.map((it, position) => ({
+          position,
+          description: it.description,
+          amountMinor: it.amountMinor,
+          members: { create: it.memberIds.map((memberId) => ({ memberId })) },
+        })),
+      }
+    : undefined;
 
 type ExpenseWithParts = Prisma.ExpenseGetPayload<{ include: typeof expenseInclude }>;
 
@@ -51,6 +79,13 @@ function snapshot(e: ExpenseWithParts) {
     version: e.version,
     payers: e.payers.map((p) => ({ memberId: p.memberId, amountMinor: p.amountMinor })),
     splits: e.splits.map((s) => ({ memberId: s.memberId, amountMinor: s.amountMinor, inputValue: s.inputValue })),
+    ...(e.splitMethod === "ITEMS"
+      ? {
+          serviceBp: e.serviceBp,
+          feesMinor: e.feesMinor,
+          items: e.items.map((i) => ({ description: i.description, amountMinor: i.amountMinor, memberIds: i.members.map((m) => m.memberId) })),
+        }
+      : {}),
   };
 }
 
@@ -58,7 +93,7 @@ export async function createExpense(viewer: Viewer, raw: z.input<typeof createEx
   const input = createExpenseSchema.parse(raw);
   // O id (gerado no cliente) é a semente determinística do arredondamento.
   const { expenseId } = input;
-  const { payers, splits } = computeFinancials(input, expenseId);
+  const { payers, splits, items } = computeFinancials(input, expenseId);
 
   try {
     return await db.$transaction(async (tx) => {
@@ -90,6 +125,9 @@ export async function createExpense(viewer: Viewer, raw: z.input<typeof createEx
           createdByMemberId: me.id,
           payers: { create: payers.map((p) => ({ memberId: p.memberId, amountMinor: p.amountMinor })) },
           splits: { create: splits.map((s) => ({ memberId: s.memberId, amountMinor: s.amountMinor, inputValue: s.inputValue })) },
+          serviceBp: items?.serviceBp ?? null,
+          feesMinor: items?.feesMinor ?? null,
+          items: itemsCreate(items),
         },
         include: expenseInclude,
       });
@@ -137,7 +175,7 @@ async function loadEditable(tx: Tx, viewer: Viewer, groupId: string, expenseId: 
 
 export async function updateExpense(viewer: Viewer, raw: z.input<typeof updateExpenseSchema>) {
   const input = updateExpenseSchema.parse(raw);
-  const { payers, splits } = computeFinancials(input, input.expenseId);
+  const { payers, splits, items } = computeFinancials(input, input.expenseId);
 
   return db.$transaction(async (tx) => {
     const { me, expense } = await loadEditable(tx, viewer, input.groupId, input.expenseId);
@@ -158,6 +196,8 @@ export async function updateExpense(viewer: Viewer, raw: z.input<typeof updateEx
         category: input.category,
         splitMethod: input.split.method,
         notes: input.notes ?? null,
+        serviceBp: items?.serviceBp ?? null,
+        feesMinor: items?.feesMinor ?? null,
         updatedByMemberId: me.id,
         version: { increment: 1 },
       },
@@ -166,6 +206,8 @@ export async function updateExpense(viewer: Viewer, raw: z.input<typeof updateEx
 
     await tx.expensePayer.deleteMany({ where: { expenseId: expense.id } });
     await tx.expenseSplit.deleteMany({ where: { expenseId: expense.id } });
+    await tx.expenseItem.deleteMany({ where: { expenseId: expense.id } });
+    if (items) await tx.expense.update({ where: { id: expense.id }, data: { items: itemsCreate(items) } });
     await tx.expensePayer.createMany({ data: payers.map((p) => ({ expenseId: expense.id, memberId: p.memberId, amountMinor: p.amountMinor })) });
     await tx.expenseSplit.createMany({
       data: splits.map((s) => ({ expenseId: expense.id, memberId: s.memberId, amountMinor: s.amountMinor, inputValue: s.inputValue })),

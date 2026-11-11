@@ -2,7 +2,13 @@ import { z } from "zod";
 import { amountMinorSchema, civilDateSchema, idSchema } from "./common";
 
 export const expenseCategorySchema = z.enum(["FOOD", "GROCERIES", "TRANSPORT", "HOUSING", "UTILITIES", "LEISURE", "TRAVEL", "EVENTS", "OTHER"]);
-export const splitMethodSchema = z.enum(["EQUAL", "EXACT", "PERCENT", "SHARES"]);
+export const splitMethodSchema = z.enum(["EQUAL", "EXACT", "PERCENT", "SHARES", "ITEMS"]);
+
+export const expenseItemSchema = z.object({
+  description: z.string().trim().min(1, "Dê um nome ao item.").max(80, "Use no máximo 80 caracteres."),
+  amountMinor: z.number().int().positive("O item precisa ter valor."),
+  memberIds: z.array(idSchema).min(1, "Escolha quem consumiu.").max(100),
+});
 
 const expenseFields = {
   groupId: idSchema,
@@ -22,6 +28,10 @@ const expenseFields = {
       .array(z.object({ memberId: idSchema, value: z.number().int().min(0).optional() }))
       .min(1, "Escolha quem participou.")
       .max(100),
+    /** Só em ITEMS: itens, taxa de serviço (pontos-base) e taxas fixas (centavos). */
+    items: z.array(expenseItemSchema).max(60, "Use no máximo 60 itens.").optional(),
+    serviceBp: z.number().int().min(0).max(3000).optional(),
+    feesMinor: z.number().int().min(0).optional(),
   }),
 };
 

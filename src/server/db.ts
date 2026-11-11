@@ -7,7 +7,7 @@ import { env } from "@/lib/env";
  * Cliente Prisma único por processo. Em desenvolvimento, o HMR recarrega
  * módulos; guardar no globalThis evita abrir um pool novo a cada edição.
  */
-const globalForPrisma = globalThis as unknown as { prisma?: PrismaClient };
+const globalForPrisma = globalThis as unknown as { prisma?: PrismaClient; prismaClass?: typeof PrismaClient };
 
 function createClient() {
   const adapter = new PrismaPg({ connectionString: env().DATABASE_URL });
@@ -17,8 +17,14 @@ function createClient() {
   });
 }
 
-export const db = globalForPrisma.prisma ?? createClient();
+// Depois de `prisma generate` (nova migration), o HMR carrega uma classe nova:
+// o cliente em cache seria de antes e não conheceria as tabelas novas.
+const cached = globalForPrisma.prismaClass === PrismaClient ? globalForPrisma.prisma : undefined;
+export const db = cached ?? createClient();
 
-if (env().NODE_ENV !== "production") globalForPrisma.prisma = db;
+if (env().NODE_ENV !== "production") {
+  globalForPrisma.prisma = db;
+  globalForPrisma.prismaClass = PrismaClient;
+}
 
 export type Db = typeof db;

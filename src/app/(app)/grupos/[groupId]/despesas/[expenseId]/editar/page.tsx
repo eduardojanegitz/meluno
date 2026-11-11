@@ -62,6 +62,9 @@ async function EditExpense({ params }: Props) {
             payers: expense.payers,
             splitMethod: expense.splitMethod,
             splits: expense.splits.map((s) => ({ memberId: s.memberId, inputValue: s.inputValue })),
+            items: expense.items.map((i) => ({ description: i.description, amountMinor: i.amountMinor, memberIds: i.members.map((m) => m.memberId) })),
+            serviceBp: expense.serviceBp,
+            feesMinor: expense.feesMinor,
           }}
         />
       </PageBody>
