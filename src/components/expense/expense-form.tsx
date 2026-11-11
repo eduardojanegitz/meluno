@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "motion/react";
 import { CalendarDays, Check, Loader2, Minus, Plus, StickyNote, Users } from "lucide-react";
@@ -19,6 +20,8 @@ import { SplitMethodPicker, type SplitMethod } from "./split-method-picker";
 import { computeItemSplit, computeSplit, PayerError, SplitError, validatePayers, PERCENT_SCALE, SHARES_SCALE, type SplitRequest } from "@/server/domain/split";
 import { MoneyError } from "@/server/domain/money";
 import { ItemsEditor, newItem, type ItemDraft } from "./items-editor";
+import { ReceiptScanner } from "./receipt-scanner";
+import type { NfceImport } from "@/server/domain/nfce";
 import { useAction } from "@/hooks/use-action";
 import { createExpenseAction, updateExpenseAction } from "@/server/actions/finance";
 import { celebrate } from "@/components/celebrate/celebration";
@@ -144,6 +147,38 @@ function ExpenseFormInner({ group, members, viewerMemberId, initial, onSaved }: 
     if (!categoryTouched) setCategory(suggestCategory(value) ?? "OTHER");
   }
 
+  // Nota fiscal lida: itens viram a divisão por item (sem taxa de serviço, já está tudo na nota).
+  function applyReceipt(r: NfceImport) {
+    const allIds = members.map((m) => m.id);
+    if (r.items.length > 0) {
+      setMethod("ITEMS");
+      setItems(r.items.map((i) => ({ key: crypto.randomUUID(), description: i.description, amountMinor: i.amountMinor, memberIds: allIds })));
+      setServiceBp(0);
+      setFeesMinor(0);
+    } else if (r.totalMinor) {
+      setAmount(r.totalMinor);
+    }
+    if (r.date) setDate(r.date);
+    if (!description.trim()) {
+      setDescription(r.store ?? "Compra com nota fiscal");
+      if (!categoryTouched) setCategory(suggestCategory(r.store ?? "") ?? "GROCERIES");
+    }
+    if (!notes.trim()) {
+      setNotes(`NFC-e ${r.uf} · chave ${r.chave.replace(/(\d{4})(?=\d)/g, "$1 ")}`);
+      setShowMore(true);
+    }
+    if (r.items.length > 0) {
+      toast.success(`${r.items.length} ${r.items.length === 1 ? "item importado" : "itens importados"}`, {
+        description: r.discountMinor > 0 ? "O desconto da nota foi distribuído entre os itens. Marque quem consumiu cada um." : "Marque quem consumiu cada um.",
+      });
+    } else {
+      toast.warning("Não conseguimos ler os itens desta nota", {
+        description: r.totalMinor ? "Preenchemos o valor; confira e escolha como dividir." : "A SEFAZ não respondeu. Informe o valor da nota.",
+      });
+    }
+    if (r.test) toast.info("Essa é uma nota de teste (homologação), sem valor fiscal.");
+  }
+
   // Monta a requisição exatamente como o servidor a receberá.
   const payers = useMemo(
     () =>
@@ -267,6 +302,12 @@ function ExpenseFormInner({ group, members, viewerMemberId, initial, onSaved }: 
       }}
       className="pb-36"
     >
+      {!editing ? (
+        <div className="flex justify-center">
+          <ReceiptScanner onImport={applyReceipt} />
+        </div>
+      ) : null}
+
       {/* Valor */}
       <div className="pt-2 pb-6 text-center">
         <Label htmlFor="amount" className="text-muted-foreground block text-xs font-medium tracking-wide uppercase">
