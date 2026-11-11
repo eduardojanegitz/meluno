@@ -1,0 +1,449 @@
+// Meluno — modelo de dados.
+// Regras-chave (ver docs/adr):
+//  * Valores monetários em unidades mínimas inteiras (`amountMinor`) + moeda ISO 4217.
+//  * Registros financeiros referenciam GroupMember, nunca User (membros provisórios
+//    e exclusão de conta não quebram o histórico).
+//  * Nenhum saldo é armazenado: saldos derivam de pagadores, divisões e acertos.
+//  * Exclusões financeiras são lógicas (deletedAt).
+//  * CHECK constraints adicionais ficam na migration SQL (Prisma não as modela).
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ───────────────────────────── Auth (Better Auth) ─────────────────────────────
+
+model User {
+  id            String   @id
+  name          String
+  email         String   @unique
+  emailVerified Boolean  @default(false)
+  image         String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  sessions      Session[]
+  accounts      Account[]
+  preferences   UserPreferences?
+  pixKeys       PixKey[]
+  memberships   GroupMember[]
+  notifications Notification[]
+
+  @@map("user")
+}
+
+model Session {
+  id        String   @id
+  expiresAt DateTime
+  token     String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  ipAddress String?
+  userAgent String?
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("session")
+}
+
+model Account {
+  id                    String    @id
+  accountId             String
+  providerId            String
+  userId                String
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accessToken           String?
+  refreshToken          String?
+  idToken               String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  /// Hash da senha (scrypt, gerado pelo Better Auth). Nunca texto puro.
+  password              String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  @@index([userId])
+  @@map("account")
+}
+
+model Verification {
+  id         String   @id
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([identifier])
+  @@map("verification")
+}
+
+/// Contadores de rate limit compartilhados entre instâncias (auth e ações sensíveis).
+model RateLimit {
+  id          String @id
+  key         String @unique
+  count       Int
+  lastRequest BigInt
+
+  @@map("rate_limit")
+}
+
+// ───────────────────────────── Perfil ─────────────────────────────
+
+model UserPreferences {
+  userId                String   @id
+  user                  User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  defaultCurrency       String   @default("BRL") @db.Char(3)
+  emailOnExpense        Boolean  @default(false)
+  emailOnSettlement     Boolean  @default(true)
+  emailOnInvitation     Boolean  @default(true)
+  updatedAt             DateTime @updatedAt
+
+  @@map("user_preferences")
+}
+
+enum PixKeyType {
+  CPF
+  CNPJ
+  EMAIL
+  PHONE
+  RANDOM
+}
+
+/// Visível apenas a quem compartilha grupo com o dono da chave.
+model PixKey {
+  id        String     @id @default(uuid(7)) @db.Uuid
+  userId    String
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type      PixKeyType
+  value     String     @db.VarChar(140)
+  label     String?    @db.VarChar(40)
+  isDefault Boolean    @default(false)
+  createdAt DateTime   @default(now())
+
+  @@unique([userId, type, value])
+  @@index([userId])
+  @@map("pix_key")
+}
+
+// ───────────────────────────── Grupos ─────────────────────────────
+
+enum GroupCategory {
+  TRIP
+  HOME
+  COUPLE
+  EVENT
+  FRIENDS
+  OTHER
+}
+
+model Group {
+  id            String        @id @default(uuid(7)) @db.Uuid
+  name          String        @db.VarChar(60)
+  description   String?       @db.VarChar(280)
+  category      GroupCategory @default(OTHER)
+  currency      String        @default("BRL") @db.Char(3)
+  simplifyDebts Boolean       @default(true)
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  archivedAt    DateTime?
+
+  members     GroupMember[]
+  invitations GroupInvitation[]
+  expenses    Expense[]
+  settlements Settlement[]
+  activity    ActivityLog[]
+
+  @@map("group")
+}
+
+enum MemberRole {
+  ADMIN
+  MEMBER
+}
+
+enum MemberStatus {
+  /// Vinculado a um usuário e participando.
+  ACTIVE
+  /// Sem conta: só nome (e e-mail opcional). Pode ser assumido via convite.
+  PROVISIONAL
+  /// Saiu por conta própria (só permitido com saldo zero).
+  LEFT
+  /// Removido por um administrador; permanece nos saldos e no histórico.
+  REMOVED
+}
+
+model GroupMember {
+  id          String       @id @default(uuid(7)) @db.Uuid
+  groupId     String       @db.Uuid
+  group       Group        @relation(fields: [groupId], references: [id], onDelete: Restrict)
+  /// Nulo para membros provisórios e para contas excluídas (LGPD).
+  userId      String?
+  user        User?        @relation(fields: [userId], references: [id], onDelete: SetNull)
+  displayName String       @db.VarChar(60)
+  /// E-mail normalizado (minúsculas) de membros provisórios.
+  email       String?      @db.VarChar(254)
+  role        MemberRole   @default(MEMBER)
+  status      MemberStatus
+  joinedAt    DateTime?
+  leftAt      DateTime?
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  paid             ExpensePayer[]
+  owed             ExpenseSplit[]
+  settlementsSent  Settlement[]      @relation("SettlementFrom")
+  settlementsRecv  Settlement[]      @relation("SettlementTo")
+  invitationsSent  GroupInvitation[] @relation("InvitationInviter")
+  invitationTarget GroupInvitation[] @relation("InvitationTarget")
+  expensesCreated  Expense[]         @relation("ExpenseCreatedBy")
+  expensesUpdated  Expense[]         @relation("ExpenseUpdatedBy")
+  expensesDeleted  Expense[]         @relation("ExpenseDeletedBy")
+  settlementsMade  Settlement[]      @relation("SettlementCreatedBy")
+  settlementsConf  Settlement[]      @relation("SettlementDecidedBy")
+  settlementsDel   Settlement[]      @relation("SettlementDeletedBy")
+  activity         ActivityLog[]
+
+  @@unique([groupId, userId])
+  @@unique([groupId, email])
+  @@index([userId])
+  @@map("group_member")
+}
+
+enum InvitationKind {
+  EMAIL
+  LINK
+}
+
+model GroupInvitation {
+  id               String         @id @default(uuid(7)) @db.Uuid
+  groupId          String         @db.Uuid
+  group            Group          @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  kind             InvitationKind
+  /// Destinatário (convites por e-mail), normalizado.
+  email            String?        @db.VarChar(254)
+  /// Membro provisório que será assumido ao aceitar.
+  targetMemberId   String?        @db.Uuid
+  targetMember     GroupMember?   @relation("InvitationTarget", fields: [targetMemberId], references: [id], onDelete: SetNull)
+  /// SHA-256 do token. O token bruto só existe no link enviado.
+  tokenHash        String         @unique @db.Char(64)
+  invitedByMemberId String        @db.Uuid
+  invitedBy        GroupMember    @relation("InvitationInviter", fields: [invitedByMemberId], references: [id], onDelete: Restrict)
+  expiresAt        DateTime
+  maxUses          Int?
+  useCount         Int            @default(0)
+  acceptedAt       DateTime?
+  revokedAt        DateTime?
+  createdAt        DateTime       @default(now())
+
+  @@index([groupId])
+  @@index([email])
+  @@map("group_invitation")
+}
+
+// ───────────────────────────── Despesas ─────────────────────────────
+
+enum ExpenseCategory {
+  FOOD
+  GROCERIES
+  TRANSPORT
+  HOUSING
+  UTILITIES
+  LEISURE
+  TRAVEL
+  EVENTS
+  OTHER
+}
+
+enum SplitMethod {
+  EQUAL
+  EXACT
+  PERCENT
+  SHARES
+}
+
+model Expense {
+  id                String          @id @default(uuid(7)) @db.Uuid
+  groupId           String          @db.Uuid
+  group             Group           @relation(fields: [groupId], references: [id], onDelete: Restrict)
+  description       String          @db.VarChar(120)
+  amountMinor       Int
+  currency          String          @db.Char(3)
+  /// Data civil da despesa (sem fuso horário).
+  date              DateTime        @db.Date
+  category          ExpenseCategory @default(OTHER)
+  splitMethod       SplitMethod
+  notes             String?         @db.VarChar(1000)
+  /// Chave do comprovante no storage privado.
+  receiptKey        String?
+  /// Controle de concorrência otimista.
+  version           Int             @default(1)
+  /// Gerada no cliente; evita duplicidade em reenvios.
+  idempotencyKey    String?         @db.VarChar(64)
+  createdByMemberId String          @db.Uuid
+  createdBy         GroupMember     @relation("ExpenseCreatedBy", fields: [createdByMemberId], references: [id], onDelete: Restrict)
+  updatedByMemberId String?         @db.Uuid
+  updatedBy         GroupMember?    @relation("ExpenseUpdatedBy", fields: [updatedByMemberId], references: [id], onDelete: Restrict)
+  deletedByMemberId String?         @db.Uuid
+  deletedBy         GroupMember?    @relation("ExpenseDeletedBy", fields: [deletedByMemberId], references: [id], onDelete: Restrict)
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+  deletedAt         DateTime?
+
+  payers ExpensePayer[]
+  splits ExpenseSplit[]
+
+  @@unique([createdByMemberId, idempotencyKey])
+  @@index([groupId, deletedAt, date(sort: Desc)])
+  @@map("expense")
+}
+
+model ExpensePayer {
+  expenseId   String      @db.Uuid
+  expense     Expense     @relation(fields: [expenseId], references: [id], onDelete: Cascade)
+  memberId    String      @db.Uuid
+  member      GroupMember @relation(fields: [memberId], references: [id], onDelete: Restrict)
+  amountMinor Int
+
+  @@id([expenseId, memberId])
+  @@index([memberId])
+  @@map("expense_payer")
+}
+
+model ExpenseSplit {
+  expenseId   String      @db.Uuid
+  expense     Expense     @relation(fields: [expenseId], references: [id], onDelete: Cascade)
+  memberId    String      @db.Uuid
+  member      GroupMember @relation(fields: [memberId], references: [id], onDelete: Restrict)
+  /// Entrada do usuário conforme o método: EXACT = centavos, PERCENT = pontos-base
+  /// (1% = 100), SHARES = partes × 100. Nulo em EQUAL.
+  inputValue  Int?
+  /// Valor calculado e persistido (soma das divisões = total da despesa).
+  amountMinor Int
+
+  @@id([expenseId, memberId])
+  @@index([memberId])
+  @@map("expense_split")
+}
+
+// ───────────────────────────── Acertos ─────────────────────────────
+
+enum SettlementStatus {
+  /// Registrado pelo pagador; não afeta saldos até o recebedor confirmar.
+  PENDING
+  CONFIRMED
+  REJECTED
+}
+
+enum SettlementMethod {
+  PIX
+  CASH
+  TRANSFER
+  OTHER
+}
+
+model Settlement {
+  id                  String           @id @default(uuid(7)) @db.Uuid
+  groupId             String           @db.Uuid
+  group               Group            @relation(fields: [groupId], references: [id], onDelete: Restrict)
+  fromMemberId        String           @db.Uuid
+  from                GroupMember      @relation("SettlementFrom", fields: [fromMemberId], references: [id], onDelete: Restrict)
+  toMemberId          String           @db.Uuid
+  to                  GroupMember      @relation("SettlementTo", fields: [toMemberId], references: [id], onDelete: Restrict)
+  amountMinor         Int
+  currency            String           @db.Char(3)
+  date                DateTime         @db.Date
+  method              SettlementMethod @default(PIX)
+  note                String?          @db.VarChar(280)
+  status              SettlementStatus
+  version             Int              @default(1)
+  idempotencyKey      String?          @db.VarChar(64)
+  createdByMemberId   String           @db.Uuid
+  createdBy           GroupMember      @relation("SettlementCreatedBy", fields: [createdByMemberId], references: [id], onDelete: Restrict)
+  decidedByMemberId   String?          @db.Uuid
+  decidedBy           GroupMember?     @relation("SettlementDecidedBy", fields: [decidedByMemberId], references: [id], onDelete: Restrict)
+  decidedAt           DateTime?
+  deletedByMemberId   String?          @db.Uuid
+  deletedBy           GroupMember?     @relation("SettlementDeletedBy", fields: [deletedByMemberId], references: [id], onDelete: Restrict)
+  createdAt           DateTime         @default(now())
+  updatedAt           DateTime         @updatedAt
+  deletedAt           DateTime?
+
+  @@unique([createdByMemberId, idempotencyKey])
+  @@index([groupId, deletedAt, status])
+  @@map("settlement")
+}
+
+// ───────────────────────────── Histórico e notificações ─────────────────────────────
+
+enum ActivityType {
+  GROUP_CREATED
+  GROUP_UPDATED
+  GROUP_ARCHIVED
+  MEMBER_ADDED
+  MEMBER_JOINED
+  MEMBER_LEFT
+  MEMBER_REMOVED
+  MEMBER_ROLE_CHANGED
+  INVITATION_SENT
+  INVITATION_REVOKED
+  EXPENSE_CREATED
+  EXPENSE_UPDATED
+  EXPENSE_DELETED
+  EXPENSE_RESTORED
+  SETTLEMENT_CREATED
+  SETTLEMENT_CONFIRMED
+  SETTLEMENT_REJECTED
+  SETTLEMENT_DELETED
+}
+
+/// Somente inserção. Edições financeiras guardam snapshot antes/depois em `payload`.
+model ActivityLog {
+  id            String       @id @default(uuid(7)) @db.Uuid
+  groupId       String       @db.Uuid
+  group         Group        @relation(fields: [groupId], references: [id], onDelete: Restrict)
+  actorMemberId String?      @db.Uuid
+  actor         GroupMember? @relation(fields: [actorMemberId], references: [id], onDelete: Restrict)
+  type          ActivityType
+  entityType    String?      @db.VarChar(32)
+  entityId      String?      @db.Uuid
+  payload       Json         @default("{}")
+  createdAt     DateTime     @default(now())
+
+  @@index([groupId, createdAt(sort: Desc)])
+  @@index([entityType, entityId])
+  @@map("activity_log")
+}
+
+enum NotificationType {
+  EXPENSE_ADDED
+  EXPENSE_UPDATED
+  EXPENSE_DELETED
+  INVITATION_RECEIVED
+  SETTLEMENT_RECEIVED
+  SETTLEMENT_CONFIRMATION_REQUESTED
+  SETTLEMENT_CONFIRMED
+  SETTLEMENT_REJECTED
+  MEMBER_JOINED
+}
+
+model Notification {
+  id        String           @id @default(uuid(7)) @db.Uuid
+  userId    String
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type      NotificationType
+  groupId   String?          @db.Uuid
+  payload   Json             @default("{}")
+  readAt    DateTime?
+  createdAt DateTime         @default(now())
+
+  @@index([userId, readAt, createdAt(sort: Desc)])
+  @@map("notification")
+}

@@ -1,0 +1,172 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+
+@custom-variant dark (&:is(.dark *));
+
+/*
+ * Meluno design tokens.
+ * Contrastes verificados (WCAG AA ≥ 4.5 para texto):
+ *   text-muted #64747D / bg #F8FAF9 = 4.62
+ *   positive #166F48 / positive-soft #E3F8EC = 5.56
+ *   negative #A8432E / negative-soft #FBEAE5 = 5.13
+ *   ink #172D40 / mint #B7F7D5 = 11.63
+ * O menta nunca é usado como cor de texto sobre fundo claro.
+ */
+
+@theme inline {
+  --font-sans: var(--font-inter);
+  --font-display: var(--font-jakarta);
+
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  /* Marca */
+  --color-ink: var(--ink);
+  --color-mint: var(--mint);
+  --color-mint-foreground: var(--mint-foreground);
+  --color-brand-dot: var(--brand-dot);
+
+  /* Semânticas financeiras */
+  --color-positive: var(--positive);
+  --color-positive-soft: var(--positive-soft);
+  --color-negative: var(--negative);
+  --color-negative-soft: var(--negative-soft);
+  --color-warning: var(--warning);
+  --color-warning-soft: var(--warning-soft);
+
+  --radius-sm: calc(var(--radius) * 0.5);
+  --radius-md: calc(var(--radius) * 0.75);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.34);
+  --radius-2xl: calc(var(--radius) * 1.67);
+  --radius-3xl: calc(var(--radius) * 2);
+  --radius-4xl: calc(var(--radius) * 2.67);
+
+  --shadow-card: 0 1px 2px rgb(23 45 64 / 0.04), 0 4px 16px -6px rgb(23 45 64 / 0.08);
+  --shadow-float: 0 8px 28px -8px rgb(23 45 64 / 0.28);
+
+  --ease-out-soft: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+:root {
+  --radius: 0.75rem;
+
+  --ink: #172d40;
+  --mint: #b7f7d5;
+  --mint-foreground: #172d40;
+  --brand-dot: #1fa36d;
+
+  --background: #f8faf9;
+  --foreground: #192a30;
+  --card: #ffffff;
+  --card-foreground: #192a30;
+  --popover: #ffffff;
+  --popover-foreground: #192a30;
+  --primary: #172d40;
+  --primary-foreground: #ffffff;
+  --secondary: #edf3f0;
+  --secondary-foreground: #172d40;
+  --muted: #edf3f0;
+  --muted-foreground: #64747d;
+  --accent: #e7f1ec;
+  --accent-foreground: #172d40;
+  --destructive: #a8432e;
+  --border: #e3e9e6;
+  --input: #d6dfdb;
+  --ring: #172d40;
+
+  --positive: #166f48;
+  --positive-soft: #e3f8ec;
+  --negative: #a8432e;
+  --negative-soft: #fbeae5;
+  --warning: #925400;
+  --warning-soft: #fdf1dc;
+}
+
+.dark {
+  --ink: #0d1a24;
+  --mint: #b7f7d5;
+  --mint-foreground: #0d1a24;
+  --brand-dot: #b7f7d5;
+
+  --background: #0d1a24;
+  --foreground: #e8efec;
+  --card: #13232f;
+  --card-foreground: #e8efec;
+  --popover: #172a37;
+  --popover-foreground: #e8efec;
+  --primary: #b7f7d5;
+  --primary-foreground: #0d1a24;
+  --secondary: #1a2c39;
+  --secondary-foreground: #e8efec;
+  --muted: #1a2c39;
+  --muted-foreground: #93a3ab;
+  --accent: #1f3442;
+  --accent-foreground: #e8efec;
+  --destructive: #f2937d;
+  --border: #223644;
+  --input: #2a4050;
+  --ring: #b7f7d5;
+
+  --positive: #6ee7a8;
+  --positive-soft: #143428;
+  --negative: #f2937d;
+  --negative-soft: #3a2220;
+  --warning: #f5c070;
+  --warning-soft: #3a2c15;
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  html {
+    -webkit-tap-highlight-color: transparent;
+  }
+  body {
+    @apply bg-background text-foreground font-sans antialiased;
+    font-feature-settings: "cv11", "ss01";
+  }
+  h1,
+  h2,
+  h3 {
+    @apply font-display tracking-tight;
+  }
+}
+
+@utility tabular {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum";
+}
+
+@utility pb-safe {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
