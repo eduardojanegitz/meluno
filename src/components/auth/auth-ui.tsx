@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useId, useState } from "react";
 import { Eye, EyeOff, CircleAlert, MailCheck } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -102,5 +103,43 @@ export function GoogleIcon() {
       <path fill="#FBBC05" d="M5.29 14.28A7.2 7.2 0 0 1 4.91 12c0-.79.14-1.56.38-2.28v-3.1H1.28A12 12 0 0 0 0 12c0 1.94.46 3.77 1.28 5.38l4.01-3.1Z" />
       <path fill="#EA4335" d="M12 4.77c1.76 0 3.34.61 4.59 1.8l3.44-3.44A11.97 11.97 0 0 0 12 0 12 12 0 0 0 1.28 6.62l4.01 3.1C6.23 6.88 8.88 4.77 12 4.77Z" />
     </svg>
+  );
+}
+
+/**
+ * Enquanto o formulário (que lê a URL no navegador) não hidrata: o título já vem no HTML,
+ * e o resto é um contorno do mesmo tamanho. Evita a tela em branco e o salto de layout.
+ */
+export function AuthFormFallback({ title, description, fields }: { title: string; description?: string; fields: number }) {
+  return (
+    <div aria-busy="true">
+      <AuthHeading title={title} description={description} />
+      <div className="space-y-4">
+        {Array.from({ length: fields }, (_, i) => (
+          <div key={i} className="space-y-2">
+            <div className="bg-muted h-4 w-20 rounded" />
+            <div className="bg-muted h-12 rounded-xl" />
+          </div>
+        ))}
+        <div className="bg-muted h-12 rounded-xl" />
+      </div>
+    </div>
+  );
+}
+
+/** Aviso legal do login com Google (texto fixo: vem no HTML, não espera o JavaScript). */
+export function GoogleLegalNote() {
+  return (
+    <p className="text-muted-foreground mt-3 text-center text-xs">
+      Entrar com Google pela primeira vez cria uma conta e significa concordar com os{" "}
+      <Link href="/termos" className="underline underline-offset-4">
+        Termos
+      </Link>{" "}
+      e a{" "}
+      <Link href="/privacidade" className="underline underline-offset-4">
+        Privacidade
+      </Link>
+      .
+    </p>
   );
 }

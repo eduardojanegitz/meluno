@@ -49,7 +49,7 @@ export const MoneyInput = forwardRef<HTMLInputElement, MoneyInputProps>(function
       onFocus={(e) => moveCaretToEnd(e.currentTarget)}
       onClick={(e) => moveCaretToEnd(e.currentTarget)}
       className={cn(
-        "tabular w-full min-w-0 bg-transparent outline-none data-empty:text-muted-foreground/70",
+        "tabular w-full min-w-0 bg-transparent outline-none data-empty:text-muted-foreground",
         size === "hero"
           ? "font-display text-center text-5xl font-extrabold tracking-tight"
           : "border-input bg-card focus-visible:border-ring focus-visible:ring-ring/30 h-12 rounded-xl border px-4 text-base font-semibold shadow-xs focus-visible:ring-[3px] aria-invalid:border-destructive",

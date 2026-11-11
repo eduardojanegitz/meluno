@@ -21,9 +21,13 @@ const schema = z
     VAPID_SUBJECT: z.string().optional().default("mailto:nao-responda@meluno.app"),
     // Protege as rotas de agendamento (/api/cron/*). A Vercel envia "Authorization: Bearer <CRON_SECRET>".
     CRON_SECRET: z.string().optional().default(""),
+    // Opcional: recebe um resumo de cada erro (Slack/Discord/coletor). Nunca com dados pessoais.
+    ERROR_WEBHOOK_URL: z.union([z.literal(""), z.url({ protocol: /^https$/ })]).optional().default(""),
+    // Só para testes de ponta a ponta: não envia e-mail nenhum (nem exige a chave do Resend).
+    EMAIL_DISABLED: z.enum(["true", "false"]).optional().default("false"),
   })
   .superRefine((env, ctx) => {
-    if (env.NODE_ENV === "production" && !env.RESEND_API_KEY) {
+    if (env.NODE_ENV === "production" && !env.RESEND_API_KEY && env.EMAIL_DISABLED !== "true") {
       ctx.addIssue({ code: "custom", path: ["RESEND_API_KEY"], message: "obrigatória em produção" });
     }
   });

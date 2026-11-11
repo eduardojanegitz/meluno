@@ -18,8 +18,9 @@ export type EmailMessage = {
  *   redefinição possam ser usados localmente.
  */
 export async function sendEmail(message: EmailMessage): Promise<void> {
-  const { RESEND_API_KEY, EMAIL_FROM, NODE_ENV } = env();
+  const { RESEND_API_KEY, EMAIL_FROM, NODE_ENV, EMAIL_DISABLED } = env();
 
+  if (EMAIL_DISABLED === "true") return;
   if (!RESEND_API_KEY) {
     if (NODE_ENV === "test") return;
     console.info(

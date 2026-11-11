@@ -34,6 +34,8 @@ O login com Google aparece automaticamente quando `GOOGLE_CLIENT_ID` e `GOOGLE_C
 | `npm run db:migrate` | Cria/aplica migrations em desenvolvimento |
 | `npm run db:studio` | Prisma Studio |
 | `npm run build:deploy` | Aplica migrations pendentes e gera o build (usado no deploy) |
+| `npm run test:e2e` | Build de produção + testes de ponta a ponta no navegador (Playwright, celular emulado), com acessibilidade (axe) e desempenho (LCP/CLS). Usa o banco `meluno_e2e` e não envia e-mails |
+| `npm run test:e2e:only` | Os mesmos testes, sem refazer o build |
 
 ## Estrutura
 
@@ -83,7 +85,8 @@ docs/adr/              decisões de produto e arquitetura
 | `EMAIL_FROM` | sim | remetente verificado no Resend |
 | `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` | não | habilitam login com Google; callback `{APP_URL}/api/auth/callback/google` |
 | `VAPID_PUBLIC_KEY` / `VAPID_PRIVATE_KEY` / `VAPID_SUBJECT` | não | notificações push; `npx web-push generate-vapid-keys` |
-| `CRON_SECRET` | para o resumo semanal | protege `/api/cron/*` |
+| `CRON_SECRET` | para recorrentes e resumo | protege `/api/cron/*` |
+| `ERROR_WEBHOOK_URL` | não | webhook HTTPS que recebe um resumo de cada erro (sem dados pessoais) |
 
 4. **Previews:** use uma *branch* do Neon por ambiente de preview, para que migrations de PRs não toquem o banco de produção.
 5. **Depois do primeiro deploy:** crie uma conta, confirme o e-mail recebido e faça um fluxo completo (grupo → despesa → acerto).

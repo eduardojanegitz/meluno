@@ -19,7 +19,9 @@
     "db:generate": "prisma generate",
     "db:studio": "prisma studio",
     "postinstall": "prisma generate",
-    "check": "npm run typecheck && npm run lint && npm run test"
+    "check": "npm run typecheck && npm run lint && npm run test",
+    "test:e2e": "next build && playwright test",
+    "test:e2e:only": "playwright test"
   },
   "dependencies": {
     "@hookform/resolvers": "^7.0.5",
@@ -47,6 +49,8 @@
     "zod": "^4.6.7"
   },
   "devDependencies": {
+    "@axe-core/playwright": "^4.11.0",
+    "@playwright/test": "^1.56.1",
     "@tailwindcss/turbopack": "4.3.3",
     "@types/node": "^24.19.2",
     "@types/pg": "^8.23.1",

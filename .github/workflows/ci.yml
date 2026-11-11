@@ -66,3 +66,58 @@ jobs:
 
       - name: Auditoria de dependências de produção
         run: npm audit --omit=dev --audit-level=high
+
+  e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    needs: check
+
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: meluno
+          POSTGRES_PASSWORD: meluno_ci
+          POSTGRES_DB: meluno
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U meluno"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      # O build lê o banco do .env só em tempo de execução; o E2E usa meluno_e2e (criado no setup).
+      DATABASE_URL: postgresql://meluno:meluno_ci@localhost:5432/meluno_e2e
+      E2E_DATABASE_URL: postgresql://meluno:meluno_ci@localhost:5432/meluno_e2e
+      APP_URL: http://localhost:3100
+      BETTER_AUTH_SECRET: ci-only-secret-not-used-anywhere-else-0123456789
+      EMAIL_DISABLED: "true"
+      EMAIL_FROM: Meluno <nao-responda@example.test>
+      NEXT_TELEMETRY_DISABLED: "1"
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - run: npm ci
+
+      - name: Navegador do Playwright
+        run: npx playwright install --with-deps chromium
+
+      - name: Testes de ponta a ponta (build de produção)
+        run: npm run test:e2e
+
+      - name: Relatório do Playwright
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: |
+            playwright-report/
+            test-results/
+          retention-days: 7
