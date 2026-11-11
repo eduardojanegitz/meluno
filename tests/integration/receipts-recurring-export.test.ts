@@ -137,8 +137,8 @@ describe("comprovante, recorrência e planilha (integração)", () => {
       const { csv, filename } = await exportGroupCsv(ana, g);
       expect(filename).toBe("meluno-ape.csv");
       const [header, row] = csv.replace(/^﻿/, "").split("\r\n");
-      expect(header).toBe("Data;Tipo;Descrição;Categoria;Divisão;Valor (BRL);Pago por;Parte de Ana;Parte de Bia;Parte de Caio;Observações");
-      expect(row).toMatch(/^2026-01-31;Despesa;'=SOMA\(A1\);Outros;igual;100,00;Ana;33,3[34];33,3[34];33,3[34];$/);
+      expect(header).toBe("Data;Tipo;Descrição;Categoria;Divisão;Valor (BRL);Pago por;Parte de Ana;Parte de Bia;Parte de Caio;Observações;Moeda original;Valor original;Cotação");
+      expect(row).toMatch(/^2026-01-31;Despesa;'=SOMA\(A1\);Outros;igual;100,00;Ana;33,3[34];33,3[34];33,3[34];;;;$/);
 
       const intrusa = await makeUser("Intrusa");
       await expect(exportGroupCsv(intrusa, g)).rejects.toSatisfy(code("NOT_FOUND"));

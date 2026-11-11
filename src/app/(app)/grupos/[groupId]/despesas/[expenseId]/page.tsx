@@ -100,6 +100,12 @@ async function ExpenseView({ params }: Props) {
           </span>
           <h1 className="text-xl font-bold">{expense.description}</h1>
           <Money amountMinor={expense.amountMinor} currency={currency} className="font-display mt-1 block text-[40px] leading-tight font-extrabold tracking-tight" />
+          {expense.foreign ? (
+            <p className="text-muted-foreground text-sm">
+              Pago <Money amountMinor={expense.foreign.amountMinor} currency={expense.foreign.currency} className="text-foreground font-semibold" /> · cotação {expense.foreign.rate} {currency} por{" "}
+              {expense.foreign.currency}
+            </p>
+          ) : null}
           <p className="text-muted-foreground mt-1 text-sm">
             {Cat.label} · <CivilDate value={expense.date} /> · {form.group.name}
           </p>

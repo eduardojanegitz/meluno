@@ -11,6 +11,7 @@ import { getMemberPixKeys } from "@/server/services/profile";
 import { enforceRateLimit } from "@/server/rate-limit";
 import * as reminders from "@/server/services/reminders";
 import * as nfce from "@/server/services/nfce";
+import * as fx from "@/server/services/fx";
 
 export const createExpenseAction = authedAction("expense.create", createExpenseSchema, async (input, viewer) => {
   await enforceRateLimit(`expense:${viewer.userId}`, 120, 3600);
@@ -38,3 +39,4 @@ export const sendReminderAction = authedAction("reminder.send", reminders.remind
 });
 
 export const readNfceAction = authedAction("nfce.read", nfce.readNfceSchema, (input, viewer) => nfce.readNfce(viewer, input));
+export const suggestRateAction = authedAction("fx.suggest", fx.rateQuerySchema, (input, viewer) => fx.suggestRate(viewer, input));

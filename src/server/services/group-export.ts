@@ -5,6 +5,11 @@ import { expenseCategories } from "@/lib/categories";
 import { minorToCell, raw, toCsv, type Cell } from "@/lib/csv";
 import { dbDateToCivil } from "@/schemas/common";
 import { requireMember } from "./access";
+import { formatRate } from "@/server/domain/fx";
+import { currencyFractionDigits, minorToDecimalString } from "@/lib/format";
+
+/** Valor em unidades mínimas → "1234,56" respeitando as casas da moeda (iene: "4139"). */
+const minorDecimalCell = (minor: number, currency: string) => (currencyFractionDigits(currency) === 0 ? String(minor) : minorToDecimalString(minor, currency).replace(".", ","));
 
 const statusText = { CONFIRMED: "confirmado", PENDING: "aguardando confirmação", REJECTED: "recusado" } as const;
 const methodText = { EQUAL: "igual", EXACT: "valores", PERCENT: "porcentagem", SHARES: "partes", ITEMS: "por item" } as const;
@@ -28,6 +33,9 @@ export async function exportGroupCsv(viewer: Viewer, groupId: string) {
       amountMinor: true,
       splitMethod: true,
       notes: true,
+      originalCurrency: true,
+      originalAmountMinor: true,
+      exchangeRateE10: true,
       payers: { select: { memberId: true, amountMinor: true } },
       splits: { select: { memberId: true, amountMinor: true } },
     },
@@ -40,7 +48,7 @@ export async function exportGroupCsv(viewer: Viewer, groupId: string) {
 
   const name = new Map(members.map((m) => [m.id, m.displayName]));
   const money = (v: number) => raw(minorToCell(v));
-  const header: Cell[] = ["Data", "Tipo", "Descrição", "Categoria", "Divisão", `Valor (${me.group.currency})`, "Pago por", ...members.map((m) => `Parte de ${m.displayName}`), "Observações"];
+  const header: Cell[] = ["Data", "Tipo", "Descrição", "Categoria", "Divisão", `Valor (${me.group.currency})`, "Pago por", ...members.map((m) => `Parte de ${m.displayName}`), "Observações", "Moeda original", "Valor original", "Cotação"];
 
   type Row = { date: string; cells: Cell[] };
   const rows: Row[] = [];
@@ -50,7 +58,8 @@ export async function exportGroupCsv(viewer: Viewer, groupId: string) {
     const date = dbDateToCivil(e.date);
     rows.push({
       date,
-      cells: [date, "Despesa", e.description, expenseCategories[e.category].label, methodText[e.splitMethod], money(e.amountMinor), paidBy, ...members.map((m) => (share.has(m.id) ? money(share.get(m.id)!) : null)), e.notes],
+      cells: [date, "Despesa", e.description, expenseCategories[e.category].label, methodText[e.splitMethod], money(e.amountMinor), paidBy, ...members.map((m) => (share.has(m.id) ? money(share.get(m.id)!) : null)), e.notes,
+        e.originalCurrency, e.originalCurrency && e.originalAmountMinor ? raw(minorDecimalCell(e.originalAmountMinor, e.originalCurrency)) : null, e.exchangeRateE10 !== null ? raw(formatRate(e.exchangeRateE10)) : null],
     });
   }
   for (const s of settlements) {
@@ -67,6 +76,9 @@ export async function exportGroupCsv(viewer: Viewer, groupId: string) {
         name.get(s.fromMemberId),
         ...members.map((m) => (m.id === s.fromMemberId ? money(s.amountMinor) : m.id === s.toMemberId ? money(-s.amountMinor) : null)),
         s.note,
+        null,
+        null,
+        null,
       ],
     });
   }

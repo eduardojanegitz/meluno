@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { amountMinorSchema, civilDateSchema, idSchema } from "./common";
+import { amountMinorSchema, civilDateSchema, currencySchema, idSchema } from "./common";
 
 export const expenseCategorySchema = z.enum(["FOOD", "GROCERIES", "TRANSPORT", "HOUSING", "UTILITIES", "LEISURE", "TRAVEL", "EVENTS", "OTHER"]);
 export const splitMethodSchema = z.enum(["EQUAL", "EXACT", "PERCENT", "SHARES", "ITEMS"]);
@@ -33,6 +33,14 @@ const expenseFields = {
     serviceBp: z.number().int().min(0).max(3000).optional(),
     feesMinor: z.number().int().min(0).optional(),
   }),
+  /** Despesa em outra moeda: valor original e cotação ("5,5517"). amountMinor é o convertido. */
+  foreign: z
+    .object({
+      currency: currencySchema,
+      amountMinor: amountMinorSchema,
+      rate: z.string().trim().min(1, "Informe a cotação.").max(20),
+    })
+    .optional(),
 };
 
 /**
@@ -47,7 +55,9 @@ export const createExpenseSchema = z
     /** Repetir automaticamente a partir da data da despesa. */
     repeat: z.enum(["WEEKLY", "MONTHLY"]).optional(),
   })
-  .refine((v) => !(v.repeat && v.split.method === "ITEMS"), { message: "Despesas divididas por item não podem se repetir.", path: ["repeat"] });
+  .refine((v) => !(v.repeat && v.split.method === "ITEMS"), { message: "Despesas divididas por item não podem se repetir.", path: ["repeat"] })
+  // A cotação muda; repetir com a mesma cotação para sempre daria valores errados.
+  .refine((v) => !(v.repeat && v.foreign), { message: "Despesas em outra moeda não podem se repetir.", path: ["repeat"] });
 
 export const updateExpenseSchema = z.object({
   ...expenseFields,

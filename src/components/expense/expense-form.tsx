@@ -21,6 +21,8 @@ import { computeItemSplit, computeSplit, PayerError, SplitError, validatePayers,
 import { MoneyError } from "@/server/domain/money";
 import { ItemsEditor, newItem, type ItemDraft } from "./items-editor";
 import { ReceiptScanner } from "./receipt-scanner";
+import { ForeignCurrencyFields, firstForeignCurrency, type ForeignDraft } from "./foreign-currency";
+import { convertMinor, FxError, parseRate } from "@/server/domain/fx";
 import type { NfceImport } from "@/server/domain/nfce";
 import { useAction } from "@/hooks/use-action";
 import { createExpenseAction, updateExpenseAction } from "@/server/actions/finance";
@@ -43,6 +45,8 @@ export type ExpenseInitial = {
   items?: { description: string; amountMinor: number; memberIds: string[] }[];
   serviceBp?: number | null;
   feesMinor?: number | null;
+  /** Despesa em outra moeda. */
+  foreign?: ForeignDraft | null;
 };
 
 type Props = {
@@ -140,7 +144,19 @@ function ExpenseFormInner({ group, members, viewerMemberId, initial, categoryHin
       return { ok: false as const, message, itemsMinor };
     }
   }, [itemsMode, items, serviceBp, feesMinor, expenseId]);
-  const total = itemsMode ? (itemCalc?.ok ? itemCalc.totalMinor : 0) : amount;
+  // Outra moeda: o valor do grupo é o convertido (mesma conta do servidor).
+  const [foreign, setForeign] = useState<ForeignDraft | null>(initial?.foreign ?? null);
+  const foreignOn = foreign !== null && !itemsMode;
+  const fx = useMemo(() => {
+    if (!foreignOn || !foreign) return null;
+    if (foreign.amountMinor <= 0) return { converted: 0, error: null };
+    try {
+      return { converted: convertMinor(foreign.amountMinor, foreign.currency, group.currency, parseRate(foreign.rate)), error: null };
+    } catch (e) {
+      return { converted: 0, error: e instanceof FxError ? e.message : "Confira a cotação." };
+    }
+  }, [foreignOn, foreign, group.currency]);
+  const total = itemsMode ? (itemCalc?.ok ? itemCalc.totalMinor : 0) : foreignOn ? (fx?.converted ?? 0) : amount;
 
   const nameOf = (id: string) => (id === viewerMemberId ? "Você" : (members.find((m) => m.id === id)?.name ?? "Ex-membro"));
   const ordered = useMemo(() => [...members].sort((a, b) => (a.id === viewerMemberId ? -1 : b.id === viewerMemberId ? 1 : 0)), [members, viewerMemberId]);
@@ -218,10 +234,10 @@ function ExpenseFormInner({ group, members, viewerMemberId, initial, categoryHin
   const preview = useMemo(() => {
     if (itemsMode) {
       if (!itemCalc?.ok) return { ok: false as const, message: itemCalc && itemCalc.itemsMinor > 0 ? itemCalc.message : null };
-    } else if (amount <= 0) return { ok: false as const, message: null };
+    } else if (total <= 0) return { ok: false as const, message: null };
     try {
       validatePayers(total, payers);
-      const splits = itemsMode && itemCalc?.ok ? itemCalc.shares : computeSplit(amount, { method, entries: splitEntries } as SplitRequest, expenseId);
+      const splits = itemsMode && itemCalc?.ok ? itemCalc.shares : computeSplit(total, { method, entries: splitEntries } as SplitRequest, expenseId);
       return { ok: true as const, splits };
     } catch (error) {
       if (error instanceof SplitError || error instanceof PayerError) {
@@ -239,7 +255,7 @@ function ExpenseFormInner({ group, members, viewerMemberId, initial, categoryHin
       }
       return { ok: false as const, message: "Confira os valores." };
     }
-  }, [itemsMode, itemCalc, total, amount, payers, method, splitEntries, expenseId, group.currency]);
+  }, [itemsMode, itemCalc, total, payers, method, splitEntries, expenseId, group.currency]);
 
   const summary = useMemo(() => {
     if (!preview.ok) return [];
@@ -263,6 +279,7 @@ function ExpenseFormInner({ group, members, viewerMemberId, initial, categoryHin
       date,
       category,
       notes: notes.trim() || undefined,
+      foreign: foreignOn && foreign ? foreign : undefined,
       payers,
       split: itemsMode
         ? {
@@ -320,7 +337,23 @@ function ExpenseFormInner({ group, members, viewerMemberId, initial, categoryHin
         <Label htmlFor="amount" className="text-muted-foreground block text-xs font-medium tracking-wide uppercase">
           Quanto foi?
         </Label>
-        {itemsMode ? (
+        {foreignOn && foreign ? (
+          <>
+            <p id="amount" className="font-display mt-1 text-[44px] leading-tight font-black tabular" aria-live="polite">
+              {formatMoney(total, { currency: group.currency })}
+              <span className="text-muted-foreground block text-xs font-semibold">
+                convertido de {formatMoney(foreign.amountMinor, { currency: foreign.currency })}
+              </span>
+            </p>
+            <ForeignCurrencyFields
+              groupCurrency={group.currency}
+              date={date}
+              value={foreign}
+              onChange={(update) => setForeign((prev) => (prev ? update(prev) : prev))}
+              error={fx?.error ?? null}
+            />
+          </>
+        ) : itemsMode ? (
           <p id="amount" className="font-display mt-1 text-[44px] leading-tight font-black tabular" aria-live="polite">
             {formatMoney(total || (itemCalc && !itemCalc.ok ? itemCalc.itemsMinor : 0), { currency: group.currency })}
             <span className="text-muted-foreground block text-xs font-semibold">soma dos itens, serviço e taxas</span>
@@ -341,6 +374,22 @@ function ExpenseFormInner({ group, members, viewerMemberId, initial, categoryHin
         />
         )}
         {amountError ? <p className="text-destructive mt-1 text-sm">{amountError}</p> : null}
+        {!itemsMode ? (
+          <button
+            type="button"
+            className="text-muted-foreground hover:text-foreground mt-2 text-sm font-semibold underline-offset-4 hover:underline"
+            onClick={() => {
+              if (foreign) {
+                setForeign(null);
+              } else {
+                setForeign({ currency: firstForeignCurrency(group.currency), amountMinor: 0, rate: "" });
+                setRepeat("");
+              }
+            }}
+          >
+            {foreign ? `Voltar para ${group.currency}` : "Paguei em outra moeda"}
+          </button>
+        ) : null}
       </div>
 
       {/* Descrição + categoria */}
@@ -420,7 +469,7 @@ function ExpenseFormInner({ group, members, viewerMemberId, initial, categoryHin
         >
           <StickyNote className="text-muted-foreground size-4" aria-hidden="true" /> Observação
         </button>
-        {!editing && !itemsMode ? (
+        {!editing && !itemsMode && !foreignOn ? (
           <label className="bg-card hover:bg-muted focus-within:ring-ring relative inline-flex h-9 cursor-pointer items-center gap-1.5 rounded-full border px-3 text-sm focus-within:ring-2">
             <Repeat className="text-muted-foreground size-4" aria-hidden="true" />
             <span className="sr-only">Repetir</span>

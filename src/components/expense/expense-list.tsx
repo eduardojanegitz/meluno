@@ -20,6 +20,8 @@ type Item = {
   category: ExpenseCategory;
   paidByLabel: string;
   viewerImpactMinor: number;
+  /** "US$ 50,00" quando foi pago em outra moeda. */
+  originalLabel?: string | null;
 };
 
 const monthFmt = new Intl.DateTimeFormat("pt-BR", { month: "long", year: "numeric" });
@@ -89,6 +91,7 @@ export function ExpenseList({ groupId, currency, archived, expenses }: { groupId
                       category={e.category}
                       totalMinor={e.amountMinor}
                       paidByLabel={e.paidByLabel}
+                      originalLabel={e.originalLabel}
                       userImpactMinor={e.viewerImpactMinor}
                       currency={currency}
                       dateLabel={<CivilDate value={e.date} />}

@@ -8,6 +8,7 @@ type ExpenseRowProps = {
   totalMinor: number;
   /** Ex.: "Você pagou", "Maria pagou", "2 pessoas pagaram". */
   paidByLabel: string;
+  originalLabel?: string | null;
   /** Efeito líquido da despesa para o usuário: > 0 emprestou, < 0 deve, 0 não participa. */
   userImpactMinor: number;
   currency?: string;
@@ -20,6 +21,7 @@ export function ExpenseRow({
   category,
   totalMinor,
   paidByLabel,
+  originalLabel,
   userImpactMinor,
   currency,
   dateLabel,
@@ -34,7 +36,8 @@ export function ExpenseRow({
       <div className="min-w-0 flex-1">
         <p className="truncate text-[15px] font-medium">{description}</p>
         <p className="text-muted-foreground truncate text-xs">
-          {paidByLabel} <Money amountMinor={totalMinor} currency={currency} className="text-muted-foreground" /> ·{" "}
+          {paidByLabel} <Money amountMinor={totalMinor} currency={currency} className="text-muted-foreground" />
+          {originalLabel ? ` (${originalLabel})` : null} ·{" "}
           {dateLabel}
         </p>
       </div>

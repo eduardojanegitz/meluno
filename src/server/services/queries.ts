@@ -1,4 +1,5 @@
 import "server-only";
+import { formatMoney } from "@/lib/format";
 import { normalizeDescription } from "@/lib/category-suggest";
 import type { ExpenseCategory } from "@/generated/prisma/enums";
 import { db } from "@/server/db";
@@ -113,6 +114,8 @@ export async function getGroupDetail(viewer: Viewer, groupId: string) {
           currency: true,
           date: true,
           category: true,
+          originalCurrency: true,
+          originalAmountMinor: true,
           payers: { select: { memberId: true, amountMinor: true } },
           splits: { select: { memberId: true, amountMinor: true } },
         },
@@ -162,6 +165,7 @@ export async function getGroupDetail(viewer: Viewer, groupId: string) {
           date: dbDateToCivil(e.date),
           category: e.category,
           payerIds: e.payers.map((p) => p.memberId),
+          originalLabel: e.originalCurrency && e.originalAmountMinor ? formatMoney(e.originalAmountMinor, { currency: e.originalCurrency }) : null,
           viewerImpactMinor: paid - owed,
           viewerInvolved: paid > 0 || e.splits.some((s) => s.memberId === me.id),
         };

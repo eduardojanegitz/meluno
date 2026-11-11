@@ -3,7 +3,7 @@ import { groupPageMetadata } from "@/lib/page-titles";
 import { Suspense } from "react";
 import { notFound, redirect } from "next/navigation";
 import { PageBody, PageHeader } from "@/components/app/page-header";
-import { ExpenseForm, type FormMember } from "@/components/expense/expense-form";
+import { ExpenseForm, type ExpenseInitial, type FormMember } from "@/components/expense/expense-form";
 import { Skeleton } from "@/components/ui/skeleton";
 import { requireViewer } from "@/server/auth/session";
 import { AppError } from "@/server/errors";
@@ -65,6 +65,7 @@ async function EditExpense({ params }: Props) {
             items: expense.items.map((i) => ({ description: i.description, amountMinor: i.amountMinor, memberIds: i.members.map((m) => m.memberId) })),
             serviceBp: expense.serviceBp,
             feesMinor: expense.feesMinor,
+            foreign: expense.foreign as ExpenseInitial["foreign"],
           }}
         />
       </PageBody>

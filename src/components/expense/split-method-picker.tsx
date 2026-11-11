@@ -58,6 +58,8 @@ export function SplitMethodPicker({ value, onChange, className }: SplitMethodPic
             {active ? (
               <motion.span
                 layoutId="split-method-active"
+                // Só anima ao trocar de opção; mudanças de layout acima (ex.: painel de outra moeda) não fazem o destaque "voar".
+                layoutDependency={value}
                 className="bg-card shadow-card absolute inset-0 rounded-xl"
                 transition={{ type: "spring", stiffness: 500, damping: 38 }}
               />

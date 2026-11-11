@@ -329,6 +329,12 @@ model Expense {
   updatedAt         DateTime        @updatedAt
   deletedAt         DateTime?
 
+  /// Despesa em outra moeda: valor original e cotação usada (moeda do grupo por 1 unidade
+  /// da original, × 10^10). `amountMinor` continua na moeda do grupo e é o que entra nos saldos.
+  originalCurrency    String? @db.Char(3)
+  originalAmountMinor Int?
+  exchangeRateE10     BigInt?
+
   /// Divisão por item: taxa de serviço (pontos-base, 1000 = 10%) e taxas fixas.
   serviceBp         Int?
   feesMinor         Int?

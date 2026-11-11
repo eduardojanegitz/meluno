@@ -9,6 +9,7 @@ import { createExpenseSchema, expenseRefSchema, updateExpenseSchema } from "@/sc
 import { computeItemSplit, computeSplit, PayerError, SplitError, validatePayers, type SplitRequest } from "@/server/domain/split";
 import { MoneyError } from "@/server/domain/money";
 import { nextOccurrence } from "@/server/domain/recurrence";
+import { convertMinor, formatRate, FxError, parseRate } from "@/server/domain/fx";
 import { assertGroupMembers, assertWritable, lockGroup, requireMember, type Tx } from "./access";
 import { logActivity, notifyGroup } from "./activity";
 
@@ -41,6 +42,26 @@ function computeFinancials(input: Pick<ExpenseCore, "amountMinor" | "payers" | "
     if (error instanceof SplitError || error instanceof PayerError || error instanceof MoneyError) {
       throw new AppError("VALIDATION", error.message, { [error instanceof PayerError ? "payers" : "split"]: error.message });
     }
+    throw error;
+  }
+}
+
+/**
+ * Outra moeda: confere a cotação e recalcula o convertido. O valor que entra nos saldos é o
+ * convertido (moeda do grupo); se o cliente mandou outro, a despesa é recusada.
+ */
+function resolveForeign(input: { amountMinor: number; split: { method: string }; foreign?: { currency: string; amountMinor: number; rate: string } }, groupCurrency: string) {
+  const f = input.foreign;
+  if (!f) return { originalCurrency: null, originalAmountMinor: null, exchangeRateE10: null };
+  if (f.currency === groupCurrency) throw new AppError("VALIDATION", "Escolha uma moeda diferente da do grupo.", { foreign: "Moeda igual à do grupo." });
+  if (input.split.method === "ITEMS") throw new AppError("VALIDATION", "Divisão por item só na moeda do grupo.", { foreign: "Divisão por item só na moeda do grupo." });
+  try {
+    const rate = parseRate(f.rate);
+    const converted = convertMinor(f.amountMinor, f.currency, groupCurrency, rate);
+    if (converted !== input.amountMinor) throw new AppError("VALIDATION", "O valor convertido não confere com a cotação.", { foreign: "Valor convertido não confere." });
+    return { originalCurrency: f.currency, originalAmountMinor: f.amountMinor, exchangeRateE10: rate };
+  } catch (error) {
+    if (error instanceof FxError) throw new AppError("VALIDATION", error.message, { foreign: error.message });
     throw error;
   }
 }
@@ -94,6 +115,9 @@ function snapshot(e: ExpenseWithParts) {
     version: e.version,
     payers: e.payers.map((p) => ({ memberId: p.memberId, amountMinor: p.amountMinor })),
     splits: e.splits.map((s) => ({ memberId: s.memberId, amountMinor: s.amountMinor, inputValue: s.inputValue })),
+    ...(e.originalCurrency
+      ? { originalCurrency: e.originalCurrency, originalAmountMinor: e.originalAmountMinor, exchangeRate: e.exchangeRateE10 !== null ? formatRate(e.exchangeRateE10) : null }
+      : {}),
     ...(e.splitMethod === "ITEMS"
       ? {
           serviceBp: e.serviceBp,
@@ -125,6 +149,7 @@ export async function createExpense(viewer: Viewer, raw: z.input<typeof createEx
       }
 
       await assertGroupMembers(tx, input.groupId, [...payers.map((p) => p.memberId), ...splits.map((s) => s.memberId)]);
+      const foreign = resolveForeign(input, me.group.currency);
 
       // "Repetir": o modelo guarda pagadores e divisão como vieram; esta é a 1ª ocorrência.
       let recurringExpenseId = opts.recurringExpenseId;
@@ -167,6 +192,7 @@ export async function createExpense(viewer: Viewer, raw: z.input<typeof createEx
           splits: { create: splits.map((s) => ({ memberId: s.memberId, amountMinor: s.amountMinor, inputValue: s.inputValue })) },
           serviceBp: items?.serviceBp ?? null,
           feesMinor: items?.feesMinor ?? null,
+          ...foreign,
           items: itemsCreate(items),
         },
       });
@@ -226,6 +252,7 @@ export async function updateExpense(viewer: Viewer, raw: z.input<typeof updateEx
 
     const previousIds = new Set([...expense.payers.map((p) => p.memberId), ...expense.splits.map((s) => s.memberId)]);
     await assertGroupMembers(tx, input.groupId, [...payers.map((p) => p.memberId), ...splits.map((s) => s.memberId)], previousIds);
+    const foreign = resolveForeign(input, me.group.currency);
 
     // Lock otimista: só grava se ninguém alterou desde que o usuário abriu a edição.
     const updated = await tx.expense.updateMany({
@@ -239,6 +266,7 @@ export async function updateExpense(viewer: Viewer, raw: z.input<typeof updateEx
         notes: input.notes ?? null,
         serviceBp: items?.serviceBp ?? null,
         feesMinor: items?.feesMinor ?? null,
+        ...foreign,
         updatedByMemberId: me.id,
         version: { increment: 1 },
       },
@@ -339,8 +367,16 @@ export async function getExpense(viewer: Viewer, groupId: string, expenseId: str
       ? await tx.recurringExpense.findFirst({ where: { id: expense.recurringExpenseId, deletedAt: null }, select: { frequency: true, status: true } })
       : null;
     const writable = !me.group.archivedAt && me.status === "ACTIVE";
+    const { exchangeRateE10, originalCurrency, originalAmountMinor, ...rest } = expense;
     return {
-      expense: { ...expense, date: dbDateToCivil(expense.date) },
+      expense: {
+        ...rest,
+        date: dbDateToCivil(expense.date),
+        foreign:
+          originalCurrency && originalAmountMinor !== null && exchangeRateE10 !== null
+            ? { currency: originalCurrency, amountMinor: originalAmountMinor, rate: formatRate(exchangeRateE10) }
+            : null,
+      },
       history,
       canEdit: writable && (expense.createdByMemberId === me.id || me.role === "ADMIN"),
       // Comprovante: quem lançou, quem pagou ou um administrador (mesma regra de services/receipts.ts).

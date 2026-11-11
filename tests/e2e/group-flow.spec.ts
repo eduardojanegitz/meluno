@@ -134,3 +134,24 @@ test("quem não é do grupo não vê nada dele (404)", async ({ browser }) => {
   const csv = await zeca.request.get(`/api/grupos${groupUrl.replace("/grupos", "")}/exportar`);
   expect(csv.status()).toBe(404);
 });
+
+test("despesa em dólar: cotação digitada, convertido nos saldos e na lista", async ({ browser }) => {
+  const ana = await as(browser, "ana");
+  await ana.goto(`${groupUrl}/despesas/nova`);
+  await ana.waitForLoadState("networkidle");
+  await ana.getByRole("button", { name: "Paguei em outra moeda" }).click();
+  await ana.getByLabel("Moeda", { exact: true }).selectOption("USD");
+  await ana.locator("#fx-amount").pressSequentially("5000");
+  await ana.getByLabel(/Cotação: 1 USD/).fill("5,5517");
+  await expect(ana.locator("#amount")).toContainText("R$ 277,59");
+  await ana.getByLabel("Descrição").fill("Táxi do aeroporto");
+  await ana.screenshot({ path: "test-results/outra-moeda.png", fullPage: true });
+  await ana.getByRole("button", { name: "Salvar despesa" }).click();
+  await expect(ana).toHaveURL(new RegExp(`${groupUrl}$`));
+  const row = ana.getByRole("link", { name: /Táxi do aeroporto/ });
+  await expect(row).toContainText("R$ 277,59");
+  await expect(row).toContainText(/US\$\s?50,00/);
+  await row.click();
+  await expect(ana.getByText(/cotação 5,5517 BRL por USD/)).toBeVisible();
+  await expectAccessible(ana, "detalhe em outra moeda");
+});
