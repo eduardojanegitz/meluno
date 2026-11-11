@@ -43,6 +43,7 @@
   --color-mint-foreground: var(--mint-foreground);
   --color-brand-dot: var(--brand-dot);
   --color-mint-strong: var(--mint-strong);
+  --color-chart-1: var(--chart-1);
   --color-coral: var(--coral);
   --color-sun: var(--sun);
   --color-grape: var(--grape);
@@ -80,6 +81,8 @@
   --mint: #7ee8b5;
   --mint-strong: #3fcf8e;
   --mint-foreground: #0f2e22;
+  /* Gráficos: um tom só, validado (contraste ≥ 3:1 no cartão; faixa de luminosidade do modo). */
+  --chart-1: #1f9466;
   --coral: #ff7a6b;
   --sun: #ffc94a;
   --grape: #8b7bff;
@@ -122,6 +125,7 @@
   --mint: #7ee8b5;
   --mint-strong: #5fdca2;
   --mint-foreground: #0f2e22;
+  --chart-1: #2ba673;
   --coral: #ff8f82;
   --sun: #ffd36b;
   --grape: #a597ff;

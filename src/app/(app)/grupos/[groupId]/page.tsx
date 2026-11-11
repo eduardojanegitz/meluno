@@ -13,6 +13,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { SpendingTab } from "@/components/group/spending-tab";
 import { CivilDate } from "@/components/app/relative-time";
 import { ExpenseList } from "@/components/expense/expense-list";
 import { SettlementActions } from "@/components/settlement/settlement-actions";
@@ -53,7 +54,7 @@ async function GroupView({ params, searchParams }: Props) {
   const me = members.find((m) => m.isViewer)!;
   const nameOf = (id: string) => (id === me.id ? "Você" : (members.find((m) => m.id === id)?.name ?? "Ex-membro"));
   const realName = (id: string) => members.find((m) => m.id === id)?.name ?? "Ex-membro";
-  const tab = sp.aba === "saldos" || sp.aba === "membros" ? sp.aba : "despesas";
+  const tab = sp.aba === "saldos" || sp.aba === "membros" || sp.aba === "gastos" ? sp.aba : "despesas";
   const pending = settlements.filter((s) => s.status === "PENDING");
   const confirmed = settlements.filter((s) => s.status === "CONFIRMED");
   const activeMembers = members.filter((m) => m.status === "ACTIVE" || m.status === "PROVISIONAL");
@@ -104,12 +105,15 @@ async function GroupView({ params, searchParams }: Props) {
         ) : null}
 
         <Tabs defaultValue={tab}>
-          <TabsList className="bg-muted grid h-12 w-full grid-cols-3 rounded-2xl p-1">
+          <TabsList className="bg-muted grid h-12 w-full grid-cols-4 rounded-2xl p-1">
             <TabsTrigger value="despesas" className="rounded-xl data-[state=active]:shadow-card">
               Despesas
             </TabsTrigger>
             <TabsTrigger value="saldos" className="rounded-xl data-[state=active]:shadow-card">
               Saldos{pending.some((s) => s.canDecide) ? <span className="bg-warning ml-1.5 size-2 rounded-full" aria-label="pendências" /> : null}
+            </TabsTrigger>
+            <TabsTrigger value="gastos" className="rounded-xl data-[state=active]:shadow-card">
+              Gastos
             </TabsTrigger>
             <TabsTrigger value="membros" className="rounded-xl data-[state=active]:shadow-card">
               Pessoas
@@ -127,6 +131,10 @@ async function GroupView({ params, searchParams }: Props) {
                   e.payerIds.length > 1 ? `${e.payerIds.length} pessoas pagaram` : `${nameOf(e.payerIds[0]!)} pagou`,
               }))}
             />
+          </TabsContent>
+
+          <TabsContent value="gastos" className="mt-5">
+            <SpendingTab groupId={group.id} />
           </TabsContent>
 
           <TabsContent value="saldos" className="mt-5 space-y-8">

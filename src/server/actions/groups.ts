@@ -3,6 +3,7 @@
 import { z } from "zod";
 import { authedAction } from "./safe-action";
 import * as recurring from "@/server/services/recurring";
+import * as spending from "@/server/services/spending";
 import { idSchema } from "@/schemas/common";
 import { addMemberSchema, changeRoleSchema, createGroupSchema, createInvitationSchema, invitationTokenSchema, memberActionSchema, updateGroupSchema } from "@/schemas/group";
 import * as groups from "@/server/services/groups";
@@ -43,3 +44,4 @@ export const getGroupSummaryAction = authedAction("group.summary", z.object({ gr
 export const closeGroupAction = authedAction("group.close", z.object({ groupId: idSchema }), (input, viewer) => groups.closeGroup(viewer, input.groupId));
 
 export const manageRecurringAction = authedAction("recurring.manage", recurring.recurringActionSchema, (input, viewer) => recurring.manageRecurring(viewer, input));
+export const getSpendingAction = authedAction("spending.read", spending.spendingSchema, (input, viewer) => spending.getGroupSpending(viewer, input));

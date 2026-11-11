@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
-import { AuthFormFallback } from "@/components/auth/auth-ui";
+import { AuthFormFallback } from "@/components/auth/auth-static";
 import { googleEnabled } from "@/lib/env";
 import { SignUpForm } from "@/components/auth/sign-up-form";
 

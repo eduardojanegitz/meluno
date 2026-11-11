@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
-import { AuthFormFallback } from "@/components/auth/auth-ui";
+import { AuthFormFallback } from "@/components/auth/auth-static";
 import { ResetPasswordForm } from "@/components/auth/password-reset-forms";
 
 export const metadata: Metadata = { title: "Nova senha", robots: { index: false } };

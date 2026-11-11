@@ -92,6 +92,26 @@ test("Ana paga com Pix, Bia confirma e o grupo fica quite", async ({ browser }) 
   await expect(bia.getByText("Tudo quite!")).toBeVisible();
 });
 
+test("aba Gastos: total, categoria e parte de cada um", async ({ browser }) => {
+  for (const scheme of ["light", "dark"] as const) {
+    const ctx = await browser.newContext({ ...devices["Pixel 7"], locale: "pt-BR", colorScheme: scheme, storageState: "test-results/.auth/ana.json" });
+    const ana = await ctx.newPage();
+    await ana.goto(`${groupUrl}?aba=gastos`);
+    const tab = ana.getByRole("tabpanel");
+    await expect(tab.getByText("Total do grupo")).toBeVisible();
+    await expect(tab.getByText("R$ 100,00").first()).toBeVisible();
+    await expect(tab.getByRole("heading", { name: "Por categoria" })).toBeVisible();
+    await expect(tab.getByText("Alimentação").first()).toBeVisible();
+    await expect(tab.getByRole("heading", { name: "Parte de cada um" })).toBeVisible();
+    await expect(tab.getByText("pagou R$ 100,00")).toBeVisible();
+    await expectAccessible(ana, `gastos ${scheme}`);
+    await ana.screenshot({ path: `test-results/gastos-${scheme}.png`, fullPage: true });
+    await tab.getByRole("button", { name: "Ver como tabela" }).click();
+    await expect(tab.getByRole("table")).toHaveCount(3);
+    await ctx.close();
+  }
+});
+
 test("telas do grupo com dados são acessíveis", async ({ browser }) => {
   const ana = await as(browser, "ana");
   for (const path of [groupUrl, `${groupUrl}?aba=saldos`, `${groupUrl}/despesas/nova`, `${groupUrl}/configuracoes`]) {
