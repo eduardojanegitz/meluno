@@ -10,6 +10,7 @@ import { expectAccessible } from "./helpers";
 test.describe.configure({ mode: "serial" });
 
 let groupUrl = "";
+let invitePath = "";
 
 /** Sessão já logada (auth.setup.ts) da pessoa, num contexto separado. */
 async function as(browser: Browser, who: keyof typeof USERS): Promise<Page> {
@@ -29,11 +30,45 @@ test("Ana cria o grupo e gera o convite; Bia entra pelo link", async ({ browser 
   await ana.getByRole("button", { name: "Gerar link" }).click();
   const invite = await ana.getByLabel("Link de convite").inputValue();
   expect(invite).toContain("/convites/");
+  invitePath = new URL(invite).pathname;
+
+  // Botões de compartilhar: WhatsApp com a mensagem pronta e QR Code em tela grande.
+  const wa = ana.getByRole("link", { name: "WhatsApp" });
+  const href = (await wa.getAttribute("href"))!;
+  expect(href.startsWith("https://wa.me/?text=")).toBe(true);
+  expect(decodeURIComponent(href)).toContain("“Viagem E2E”");
+  expect(decodeURIComponent(href)).toContain(invite);
+  await ana.getByRole("button", { name: "QR Code" }).click();
+  await expect(ana.getByRole("img", { name: "QR Code do convite para Viagem E2E" })).toBeVisible();
+  await ana.keyboard.press("Escape");
 
   const bia = await as(browser, "bia");
   await bia.goto(new URL(invite).pathname);
   await bia.getByRole("button", { name: "Entrar no grupo" }).click();
   await expect(bia).toHaveURL(new RegExp(`${groupUrl}$`));
+});
+
+test("link de convite sem login: prévia com o grupo, metadados e imagem para o WhatsApp", async ({ browser }) => {
+  const ctx = await browser.newContext({ ...devices["Pixel 7"], locale: "pt-BR" });
+  const page = await ctx.newPage();
+  const res = await page.goto(invitePath);
+  expect(res?.status()).toBe(200);
+  await expect(page.getByRole("heading", { name: "Viagem E2E" })).toBeVisible();
+  await expect(page.getByText("Ana E2E convidou você para", { exact: true })).toBeVisible();
+  const signup = page.getByRole("link", { name: "Criar conta e entrar no grupo" });
+  expect(await signup.getAttribute("href")).toBe(`/criar-conta?next=${encodeURIComponent(invitePath)}`);
+
+  // O que o robô do WhatsApp lê (ele recebe os metadados no <head>).
+  const bot = await ctx.request.get(invitePath, { headers: { "user-agent": "WhatsApp/2.23.20.0 A" } });
+  const html = await bot.text();
+  expect(html).toMatch(/<meta property="og:title" content="Ana E2E convidou você para “Viagem E2E”"/);
+  expect(html).toMatch(/<meta name="robots" content="noindex, nofollow"/);
+  const image = html.match(/<meta property="og:image" content="([^"]+)"/)?.[1];
+  expect(image).toBeTruthy();
+  const png = await ctx.request.get(image!.replace(/^https?:\/\/[^/]+/, ""));
+  expect(png.headers()["content-type"]).toBe("image/png");
+  (await import("node:fs")).writeFileSync("test-results/convite-og.png", await png.body());
+  await ctx.close();
 });
 
 test("Bia cadastra a chave Pix e lança o jantar com comprovante", async ({ browser }) => {

@@ -13,7 +13,10 @@ export function proxy(request: NextRequest) {
   const { pathname, search } = request.nextUrl;
   const hasSession = Boolean(getSessionCookie(request, { cookiePrefix: "meluno" }));
 
-  if (!hasSession && APP_PREFIXES.some((p) => pathname === p || pathname.startsWith(`${p}/`))) {
+  // /convites/<token> e a imagem da prévia dele são públicos (quem ainda não entrou, robô do WhatsApp);
+  // /convites (a lista de convites recebidos) não.
+  const publicInvite = /^\/convites\/[^/]+(\/opengraph-image[^/]*)?$/.test(pathname);
+  if (!hasSession && !publicInvite && APP_PREFIXES.some((p) => pathname === p || pathname.startsWith(`${p}/`))) {
     const url = new URL("/entrar", request.url);
     url.searchParams.set("next", `${pathname}${search}`);
     return NextResponse.redirect(url);

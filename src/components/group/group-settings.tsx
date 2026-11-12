@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Archive, Check, Copy, FileSpreadsheet, Link2, Loader2, LogOut, Mail, MoreVertical, ShieldCheck, UserMinus, UserPlus, X } from "lucide-react";
+import { Archive, Check, Copy, FileSpreadsheet, Link2, Loader2, LogOut, Mail, MessageCircle, MoreVertical, QrCode, ShieldCheck, UserMinus, UserPlus, X } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { groupCategories, type GroupCategory } from "@/lib/categories";
@@ -27,6 +27,8 @@ import { MemberAvatar } from "@/components/member-avatar";
 import { Money } from "@/components/money/money";
 import { SectionTitle } from "@/components/app/page-header";
 import { RecurringSection, type RecurringItem } from "./recurring-section";
+import { QrSvg } from "@/components/qr-svg";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { useAction } from "@/hooks/use-action";
 import {
   addMemberAction,
@@ -56,7 +58,7 @@ export function GroupSettings({ group, isAdmin, members, invitations, recurring 
 
   return (
     <div className="space-y-10 pb-10">
-      {!group.archived ? <InviteSection groupId={group.id} invitations={invitations} onChange={refresh} /> : null}
+      {!group.archived ? <InviteSection groupId={group.id} groupName={group.name} invitations={invitations} onChange={refresh} /> : null}
       <MembersSection group={group} isAdmin={isAdmin} members={members} onChange={refresh} />
       {isAdmin && !group.archived ? <GroupForm group={group} onSaved={refresh} /> : null}
       <RecurringSection groupId={group.id} currency={group.currency} items={recurring} />
@@ -74,7 +76,7 @@ export function GroupSettings({ group, isAdmin, members, invitations, recurring 
   );
 }
 
-function InviteSection({ groupId, invitations, onChange }: { groupId: string; invitations: Invitation[]; onChange: () => void }) {
+function InviteSection({ groupId, groupName, invitations, onChange }: { groupId: string; groupName: string; invitations: Invitation[]; onChange: () => void }) {
   const createLink = useAction(createInvitationAction);
   const createEmail = useAction(createInvitationAction);
   const revoke = useAction(revokeInvitationAction);
@@ -93,7 +95,7 @@ function InviteSection({ groupId, invitations, onChange }: { groupId: string; in
   async function share(url: string) {
     if (navigator.share) {
       try {
-        await navigator.share({ title: "Convite para o Meluno", text: "Entre no nosso grupo no Meluno para dividir as despesas:", url });
+        await navigator.share({ title: `Convite para “${groupName}”`, text: inviteText(groupName), url });
         return;
       } catch {
         /* usuário cancelou */
@@ -112,11 +114,20 @@ function InviteSection({ groupId, invitations, onChange }: { groupId: string; in
           </p>
           <p className="text-muted-foreground mt-1 text-xs">Quem tiver o link pode entrar no grupo. Vale por 7 dias.</p>
           {link ? (
-            <div className="mt-3 flex gap-2">
+            <div className="mt-3 space-y-2">
               <Input readOnly value={link} aria-label="Link de convite" onFocus={(e) => e.currentTarget.select()} className="font-mono text-xs" />
-              <Button type="button" variant="mint" onClick={() => share(link)}>
-                <Copy /> Compartilhar
-              </Button>
+              <div className="grid grid-cols-3 gap-2">
+                <Button asChild variant="mint">
+                  {/* wa.me abre o app do WhatsApp no celular (ou o WhatsApp Web) com a mensagem pronta. */}
+                  <a href={`https://wa.me/?text=${encodeURIComponent(`${inviteText(groupName)} ${link}`)}`} target="_blank" rel="noopener noreferrer">
+                    <MessageCircle aria-hidden="true" /> WhatsApp
+                  </a>
+                </Button>
+                <InviteQr link={link} groupName={groupName} />
+                <Button type="button" variant="outline" onClick={() => share(link)}>
+                  <Copy aria-hidden="true" /> Enviar
+                </Button>
+              </div>
             </div>
           ) : (
             <Button
@@ -446,5 +457,30 @@ function DangerSection({ group, isAdmin, viewerBalance }: { group: Props["group"
         </Button>
       ) : null}
     </section>
+  );
+}
+
+const inviteText = (groupName: string) => `Entra no grupo “${groupName}” no Meluno pra gente dividir as despesas:`;
+
+/** QR Code do convite em tela grande: quem está do lado aponta a câmera e entra. */
+function InviteQr({ link, groupName }: { link: string; groupName: string }) {
+  return (
+    <Dialog>
+      <DialogTrigger asChild>
+        <Button type="button" variant="outline">
+          <QrCode aria-hidden="true" /> QR Code
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="max-w-sm">
+        <DialogHeader>
+          <DialogTitle>Entrar em “{groupName}”</DialogTitle>
+          <DialogDescription>Peça para a pessoa apontar a câmera do celular para o código.</DialogDescription>
+        </DialogHeader>
+        <div className="mx-auto rounded-2xl bg-white p-3">
+          <QrSvg value={link} size={260} label={`QR Code do convite para ${groupName}`} />
+        </div>
+        <p className="text-muted-foreground text-center text-xs">O link vale por 7 dias e pode ser usado por várias pessoas.</p>
+      </DialogContent>
+    </Dialog>
   );
 }

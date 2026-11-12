@@ -34,3 +34,16 @@ describe("proxy (redirecionamento otimista)", () => {
     expect(run("/entrar?sessao=expirada", SESSION)).toBeNull();
   });
 });
+
+describe("proxy: convites (Etapa 18)", () => {
+  it("o convite e a imagem da prévia são públicos (quem ainda não entrou, robô do WhatsApp)", () => {
+    expect(run("/convites/abcDEF123_-xyz")).toBeNull();
+    expect(run("/convites/abcDEF123_-xyz/opengraph-image")).toBeNull();
+    expect(run("/convites/abcDEF123_-xyz/opengraph-image-1a2b3c")).toBeNull();
+  });
+
+  it("a lista de convites e outros caminhos abaixo do convite pedem login", () => {
+    expect(new URL(run("/convites")!).searchParams.get("next")).toBe("/convites");
+    expect(new URL(run("/convites/abc/outra-coisa")!).pathname).toBe("/entrar");
+  });
+});

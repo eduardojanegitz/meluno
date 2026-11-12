@@ -145,6 +145,23 @@ function stateOf(inv: NonNullable<Awaited<ReturnType<typeof findByToken>>>): Inv
 }
 
 /** Prévia pública mínima do convite (sem dados de membros). */
+/**
+ * Prévia para quem ainda não entrou (e para a prévia do link no WhatsApp): só o que o próprio
+ * convite já mostra — quem convidou, o grupo e quantas pessoas. Nada de e-mails ou membros.
+ * Quem tem o link é o convidado; o token tem 256 bits e não dá para adivinhar.
+ */
+export async function previewInvitationPublic(token: string) {
+  const inv = await findByToken(token);
+  if (!inv) return { state: "INVALID" as const };
+  return {
+    state: stateOf(inv),
+    groupName: inv.group.name,
+    category: inv.group.category,
+    memberCount: inv.group._count.members,
+    inviterName: inv.invitedBy.displayName,
+  };
+}
+
 export async function previewInvitation(viewer: Viewer, token: string) {
   const inv = await findByToken(token);
   if (!inv) return { state: "INVALID" as const };
