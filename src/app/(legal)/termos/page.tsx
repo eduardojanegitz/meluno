@@ -9,7 +9,7 @@ export default function TermsPage() {
   return (
     <LegalPage title="Termos de uso">
       <p>
-        Estes termos valem entre você e <strong>{LEGAL.controller}</strong> ({LEGAL.document}), responsável pelo Meluno. Ao criar uma conta, você concorda com eles e com a{" "}
+        Estes termos valem entre você e <strong>{LEGAL.controller}</strong>, responsável pelo Meluno. Ao criar uma conta, você concorda com eles e com a{" "}
         <Link href="/privacidade">Política de privacidade</Link>.
       </p>
 
@@ -60,7 +60,7 @@ export default function TermsPage() {
 
       <h2>Lei e foro</h2>
       <p>
-        Vale a lei brasileira. Fica eleito o foro de {LEGAL.forum}, sem prejuízo do seu direito de usar o foro do seu domicílio como consumidor.
+        Vale a lei brasileira. Eventuais disputas ficam no foro do seu domicílio.
       </p>
 
       <h2>Contato</h2>

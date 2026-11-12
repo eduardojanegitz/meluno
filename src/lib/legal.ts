@@ -1,19 +1,17 @@
 /**
  * Dados do responsável pelo Meluno (controlador, na LGPD).
- * Preencha antes de publicar. Enquanto houver "[" em algum campo, as páginas
+ * Uso gratuito por pessoa física: basta o nome e um e-mail de contato (art. 9º da LGPD).
+ * Se o Meluno passar a cobrar ou for operado por empresa, acrescente CPF/CNPJ e endereço
+ * (Decreto 7.962/2013) e revise o texto. Enquanto houver "[" num campo, as páginas
  * de privacidade e termos mostram um aviso de rascunho.
  */
 export const LEGAL = {
-  /** Nome da pessoa ou empresa responsável. */
-  controller: "[NOME DO RESPONSÁVEL]",
-  /** CPF ou CNPJ. */
-  document: "[CPF OU CNPJ]",
-  /** E-mail para pedidos sobre dados pessoais (encarregado/DPO ou o próprio responsável). */
-  privacyEmail: "[E-MAIL DE CONTATO]",
-  /** Cidade/UF do foro. */
-  forum: "[CIDADE/UF]",
-  /** Provedores de hospedagem e banco de dados (ex.: "Vercel (EUA) e Neon (EUA)"). */
-  hosting: "[PROVEDOR DE HOSPEDAGEM E BANCO DE DADOS]",
+  /** Seu nome (ou o da empresa, no futuro). */
+  controller: "Eduardo Alves",
+  /** E-mail para pedidos sobre dados pessoais. Precisa receber mensagens de verdade. */
+  privacyEmail: "privacidade@meluno.com.br",
+  /** Onde o app e o banco rodam. */
+  hosting: "Vercel e Neon (servidores em São Paulo)",
   updatedAt: "11 de novembro de 2026",
 } as const;
 

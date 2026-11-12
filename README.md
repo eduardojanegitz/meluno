@@ -95,7 +95,7 @@ A CI (`.github/workflows/ci.yml`) roda typecheck, lint, testes unitários e de i
 
 ### Checklist de lançamento
 
-1. **Dados do responsável:** preencha `src/lib/legal.ts` (nome, CPF/CNPJ, e-mail de contato, foro e provedores). Enquanto houver campos entre colchetes, `/privacidade` e `/termos` mostram um aviso de rascunho. Revise os dois textos com um advogado.
+1. **Dados do responsável:** preencha `src/lib/legal.ts` (seu nome; confira o e-mail de contato e os provedores). Para uso gratuito por pessoa física, CPF não é necessário; se passar a cobrar, acrescente CPF/CNPJ e endereço. Enquanto houver campos entre colchetes, `/privacidade` e `/termos` mostram um aviso de rascunho. Revise os dois textos com um advogado.
 2. **Região:** use a região de São Paulo na Vercel (`gru1`) e no Neon (`sa-east-1`).
    - Deixa o app mais rápido para quem está no Brasil.
    - Algumas SEFAZ recusam acesso de fora do país, o que afeta a leitura de NFC-e.

@@ -15,7 +15,7 @@ export default function PrivacyPage() {
 
       <h2>Quem é o responsável</h2>
       <p>
-        O controlador dos dados é <strong>{LEGAL.controller}</strong> ({LEGAL.document}). Pedidos e dúvidas sobre dados pessoais:{" "}
+        O controlador dos dados é <strong>{LEGAL.controller}</strong>. Pedidos e dúvidas sobre dados pessoais:{" "}
         <a href={`mailto:${LEGAL.privacyEmail}`}>{LEGAL.privacyEmail}</a>.
       </p>
 
