@@ -14,7 +14,7 @@ concurrency:
 
 jobs:
   check:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 20
 
     services:
@@ -68,7 +68,9 @@ jobs:
         run: npm audit --omit=dev --audit-level=high
 
   e2e:
-    runs-on: ubuntu-latest
+    # Versão fixa: o ubuntu-latest virou 26.04, que o Playwright 1.56 ainda não suporta.
+    # Ao atualizar o Playwright, dá para subir esta versão junto.
+    runs-on: ubuntu-24.04
     timeout-minutes: 25
     needs: check
 
