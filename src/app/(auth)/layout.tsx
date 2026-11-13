@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Logo } from "@/components/brand/logo";
 import { Melu } from "@/components/brand/melu";
+import { IosInstallBanner } from "@/components/install/install-app";
 
 export default function AuthLayout({ children }: LayoutProps<"/">) {
   return (
@@ -16,6 +17,7 @@ export default function AuthLayout({ children }: LayoutProps<"/">) {
           {children}
         </div>
       </main>
+      <IosInstallBanner />
     </div>
   );
 }

@@ -13,29 +13,60 @@ import type { NfceImport } from "@/server/domain/nfce";
 type Detector = { detect: (source: CanvasImageSource) => Promise<{ rawValue: string }[]> };
 type DetectorCtor = { new (o: { formats: string[] }): Detector; getSupportedFormats?: () => Promise<string[]> };
 
+type Source = HTMLVideoElement | HTMLImageElement;
+type Decoder = (source: Source, canvas: HTMLCanvasElement) => Promise<string | null>;
+
 /**
  * Decodifica QR de um quadro. Usa o leitor nativo do navegador (Chrome/Android) e,
  * onde ele não existe (iPhone, Firefox), o jsQR, carregado só quando preciso.
+ *
+ * O QR da NFC-e é denso (um link longo) e costuma ocupar pouco do quadro. Reduzir o quadro
+ * inteiro apaga os módulos; por isso o jsQR lê primeiro o recorte central (a moldura que a
+ * pessoa vê) em resolução cheia e, alternando, o quadro inteiro.
  */
-async function makeDecoder(): Promise<(source: HTMLVideoElement | HTMLImageElement, canvas: HTMLCanvasElement) => Promise<string | null>> {
+async function makeDecoder(): Promise<Decoder> {
   const Native = (globalThis as { BarcodeDetector?: DetectorCtor }).BarcodeDetector;
-  if (Native && (await Native.getSupportedFormats?.())?.includes("qr_code")) {
+  if (Native && (await Native.getSupportedFormats?.().catch((): string[] => []))?.includes("qr_code")) {
     const detector = new Native({ formats: ["qr_code"] });
     return async (source) => (await detector.detect(source))[0]?.rawValue ?? null;
   }
   const { default: jsQR } = await import("jsqr");
-  return async (source, canvas) => {
+  let frame = 0;
+  const scan = (source: Source, canvas: HTMLCanvasElement, crop: number, max: number, both: boolean) => {
     const w = source instanceof HTMLVideoElement ? source.videoWidth : source.naturalWidth;
     const h = source instanceof HTMLVideoElement ? source.videoHeight : source.naturalHeight;
     if (!w || !h) return null;
-    const scale = Math.min(1, 800 / Math.max(w, h));
-    canvas.width = Math.round(w * scale);
-    canvas.height = Math.round(h * scale);
+    // Recorte quadrado no centro (o vídeo aparece com object-cover num quadrado).
+    const side = Math.min(w, h) * crop;
+    const sx = (w - side) / 2;
+    const sy = (h - side) / 2;
+    const size = Math.round(Math.min(side, max));
+    canvas.width = size;
+    canvas.height = size;
     const ctx = canvas.getContext("2d", { willReadFrequently: true });
     if (!ctx) return null;
-    ctx.drawImage(source, 0, 0, canvas.width, canvas.height);
-    const img = ctx.getImageData(0, 0, canvas.width, canvas.height);
-    return jsQR(img.data, img.width, img.height, { inversionAttempts: "dontInvert" })?.data ?? null;
+    ctx.imageSmoothingEnabled = false;
+    ctx.drawImage(source, sx, sy, side, side, 0, 0, size, size);
+    const img = ctx.getImageData(0, 0, size, size);
+    return jsQR(img.data, size, size, { inversionAttempts: both ? "attemptBoth" : "dontInvert" })?.data ?? null;
+  };
+  return async (source, canvas) => {
+    if (source instanceof HTMLImageElement) {
+      // Foto: vale gastar mais tempo. Tenta o centro, a imagem toda e tamanhos diferentes.
+      for (const [crop, max] of [
+        [1, 1600],
+        [0.7, 1400],
+        [1, 900],
+        [0.5, 1000],
+      ] as const) {
+        const v = scan(source, canvas, crop, max, true);
+        if (v) return v;
+      }
+      return null;
+    }
+    // Vídeo: um tamanho por quadro, alternando entre a moldura (de perto) e o quadro todo.
+    frame++;
+    return frame % 3 === 2 ? scan(source, canvas, 1, 1000, false) : scan(source, canvas, 0.7, 900, false);
   };
 }
 
@@ -50,7 +81,9 @@ export function ReceiptScanner({ onImport }: { onImport: (data: NfceImport) => v
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle>Ler nota fiscal</DialogTitle>
-            <DialogDescription>Aponte a câmera para o QR Code da NFC-e, aquele no pé do cupom.</DialogDescription>
+            <DialogDescription>
+              Aponte a câmera para o QR Code no pé do cupom, deixando ele dentro da moldura. Se não ler, afaste um pouco o celular.
+            </DialogDescription>
           </DialogHeader>
           {open ? (
             <ScannerBody
@@ -97,7 +130,14 @@ function ScannerBody({ onDone }: { onDone: (data: NfceImport) => void }) {
     (async () => {
       try {
         if (!navigator.mediaDevices?.getUserMedia) throw new Error("no camera api");
-        stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: "environment" } }, audio: false });
+        // Resolução alta: o QR da NFC-e tem muitos módulos e some numa câmera de 640×480.
+        stream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: { ideal: "environment" }, width: { ideal: 1920 }, height: { ideal: 1080 } },
+          audio: false,
+        });
+        // Foco contínuo onde o navegador deixa (Android); no iPhone já é o padrão.
+        const [track] = stream.getVideoTracks();
+        await track?.applyConstraints({ advanced: [{ focusMode: "continuous" } as MediaTrackConstraintSet] }).catch(() => {});
         if (stopped) return stream.getTracks().forEach((t) => t.stop());
         const video = videoRef.current!;
         video.srcObject = stream;
@@ -115,7 +155,7 @@ function ScannerBody({ onDone }: { onDone: (data: NfceImport) => void }) {
               return;
             }
           }
-          timer = setTimeout(tick, 160);
+          timer = setTimeout(tick, 120);
         };
         void tick();
       } catch {
@@ -150,7 +190,10 @@ function ScannerBody({ onDone }: { onDone: (data: NfceImport) => void }) {
         <video ref={videoRef} playsInline muted className="size-full object-cover" aria-label="Câmera" />
         <canvas ref={canvasRef} className="hidden" />
         {camera === "on" && !read.pending ? (
-          <div className="pointer-events-none absolute inset-[18%] rounded-2xl border-4 border-white/90 shadow-[0_0_0_999px_rgba(0,0,0,0.35)]" aria-hidden="true" />
+          <div
+            className="pointer-events-none absolute inset-[18%] rounded-2xl border-4 border-white/90 shadow-[0_0_0_999px_rgba(0,0,0,0.35)]"
+            aria-hidden="true"
+          />
         ) : null}
         {camera === "starting" ? (
           <p className="absolute inset-0 grid place-items-center text-sm text-white/80">
@@ -197,7 +240,13 @@ function ScannerBody({ onDone }: { onDone: (data: NfceImport) => void }) {
             if (manual.trim()) void submit(manual.trim());
           }}
         >
-          <Input value={manual} onChange={(e) => setManual(e.target.value)} placeholder="Ou cole o link ou a chave de acesso" aria-label="Link do QR Code ou chave de acesso" className="h-10 flex-1" />
+          <Input
+            value={manual}
+            onChange={(e) => setManual(e.target.value)}
+            placeholder="Ou cole o link ou a chave de acesso"
+            aria-label="Link do QR Code ou chave de acesso"
+            className="h-10 flex-1"
+          />
           <Button type="submit" variant="outline" disabled={read.pending || manual.trim().length < 20}>
             Buscar
           </Button>

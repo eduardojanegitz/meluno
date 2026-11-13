@@ -5,7 +5,7 @@ import { Logo } from "@/components/brand/logo";
 import { LogoMorph } from "@/components/brand/logo-morph";
 import { Melu } from "@/components/brand/melu";
 import { Button } from "@/components/ui/button";
-import { InstallButton } from "@/components/install/install-app";
+import { InstallButton, IosInstallBanner } from "@/components/install/install-app";
 import { MemberAvatar } from "@/components/member-avatar";
 import { Money } from "@/components/money/money";
 
@@ -21,7 +21,11 @@ const steps = [
 ];
 
 const features = [
-  { icon: Divide, title: "Centavo por centavo", text: "A conta fecha no centavo. E o centavo que sobra vai rodando entre a turma, pra ninguém sair no prejuízo sempre." },
+  {
+    icon: Divide,
+    title: "Centavo por centavo",
+    text: "A conta fecha no centavo. E o centavo que sobra vai rodando entre a turma, pra ninguém sair no prejuízo sempre.",
+  },
   { icon: Sparkles, title: "Menos transferências", text: "Nada de cinco Pix cruzados. Você vê só os pagamentos que precisam acontecer." },
   { icon: UserPlus, title: "Chama quem quiser", text: "Comece antes de a pessoa entrar. Quando ela aceitar o convite, tá tudo lá esperando." },
   { icon: Link2, title: "Pix à mão", text: "Deixe sua chave Pix salva e quem te deve copia com um toque. O dinheiro vai direto, o Meluno não toca nele." },
@@ -32,7 +36,10 @@ const features = [
 export default function Home() {
   return (
     <div className="flex min-h-dvh flex-col">
-      <a href="#conteudo" className="bg-primary text-primary-foreground sr-only z-50 rounded-lg px-4 py-2 focus:not-sr-only focus:fixed focus:top-3 focus:left-3">
+      <a
+        href="#conteudo"
+        className="bg-primary text-primary-foreground sr-only z-50 rounded-lg px-4 py-2 focus:not-sr-only focus:fixed focus:top-3 focus:left-3"
+      >
         Pular para o conteúdo
       </a>
       <header className="mx-auto flex h-16 w-full max-w-6xl items-center justify-between px-4 sm:px-8">
@@ -89,8 +96,12 @@ export default function Home() {
             <ol className="mt-10 grid gap-6 sm:grid-cols-3">
               {steps.map((s, i) => (
                 <li key={s.title} className="relative">
-                  <span className="bg-ink font-display dark:bg-mint dark:text-mint-foreground flex size-8 items-center justify-center rounded-full text-sm font-black text-white">{i + 1}</span>
-                  <span className={`${["bg-mint", "bg-sun", "bg-coral"][i]} text-ink mt-3 flex size-14 -rotate-3 items-center justify-center rounded-2xl shadow-[0_4px_0_rgb(0_0_0/0.12)]`}>
+                  <span className="bg-ink font-display dark:bg-mint dark:text-mint-foreground flex size-8 items-center justify-center rounded-full text-sm font-black text-white">
+                    {i + 1}
+                  </span>
+                  <span
+                    className={`${["bg-mint", "bg-sun", "bg-coral"][i]} text-ink mt-3 flex size-14 -rotate-3 items-center justify-center rounded-2xl shadow-[0_4px_0_rgb(0_0_0/0.12)]`}
+                  >
                     <s.icon className="size-6" strokeWidth={2.25} aria-hidden="true" />
                   </span>
                   <h3 className="mt-4 text-lg font-bold">{s.title}</h3>
@@ -109,7 +120,9 @@ export default function Home() {
           <ul className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {features.map((f, i) => (
               <li key={f.title} className="bg-card shadow-card rounded-3xl border-2 p-6 transition-transform hover:-translate-y-1 hover:-rotate-[0.5deg]">
-                <span className={`${["bg-mint", "bg-sun", "bg-grape/30", "bg-coral/40", "bg-mint", "bg-sun"][i]} text-ink flex size-11 items-center justify-center rounded-xl`}>
+                <span
+                  className={`${["bg-mint", "bg-sun", "bg-grape/30", "bg-coral/40", "bg-mint", "bg-sun"][i]} text-ink flex size-11 items-center justify-center rounded-xl`}
+                >
                   <f.icon className="size-5" strokeWidth={2.25} aria-hidden="true" />
                 </span>
                 <h3 className="mt-4 text-lg font-extrabold">{f.title}</h3>
@@ -135,6 +148,7 @@ export default function Home() {
           </div>
         </section>
       </main>
+      <IosInstallBanner />
 
       <footer className="text-muted-foreground mx-auto flex w-full max-w-6xl flex-col items-center justify-between gap-3 border-t px-4 py-8 text-sm sm:flex-row sm:px-8">
         <Logo size="sm" className="text-foreground" />
@@ -160,7 +174,10 @@ function HeroIllustration() {
     { id: "ex-carla", name: "Carla", amount: -3330 },
   ];
   return (
-    <figure className="animate-in fade-in slide-in-from-bottom-6 relative mx-auto mt-10 w-full max-w-sm duration-1000 lg:mt-0 lg:max-w-md" aria-label="Exemplo ilustrativo de um grupo no Meluno">
+    <figure
+      className="animate-in fade-in slide-in-from-bottom-6 relative mx-auto mt-10 w-full max-w-sm duration-1000 lg:mt-0 lg:max-w-md"
+      aria-label="Exemplo ilustrativo de um grupo no Meluno"
+    >
       <div className="bg-sun absolute -top-4 -right-3 -z-10 size-24 rounded-full" aria-hidden="true" />
       <div className="bg-coral/50 absolute -bottom-5 -left-4 -z-10 size-16 rotate-12 rounded-[22px]" aria-hidden="true" />
       <div className="absolute -top-14 -left-3 z-10 sm:-left-8" aria-hidden="true">

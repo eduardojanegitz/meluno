@@ -104,6 +104,38 @@ export function InstallCard({ dismissible = false, className }: { dismissible?: 
   );
 }
 
+/**
+ * Aviso flutuante só no iPhone/iPad (o Safari não tem convite de instalação próprio).
+ * Aparece nas páginas de fora do app; fechar vale por 30 dias, junto com o cartão do Início.
+ */
+export function IosInstallBanner() {
+  const { status, install, guide } = useInstall();
+  const [dismissed, dismiss] = useDismissed();
+  if (status !== "ios" || dismissed) return null;
+  return (
+    <>
+      <div
+        role="region"
+        aria-label="Instalar o Meluno"
+        className="bg-card animate-in fade-in slide-in-from-bottom-4 fixed inset-x-3 bottom-[max(0.75rem,env(safe-area-inset-bottom))] z-40 mx-auto flex max-w-md items-center gap-3 rounded-2xl border-2 p-3 shadow-lg duration-500"
+      >
+        <Melu mood="happy" size={40} className="shrink-0" />
+        <p className="min-w-0 flex-1 text-sm">
+          <strong>Instale o Meluno:</strong> toque em <Share className="inline size-4 align-[-3px]" aria-label="Compartilhar" /> e depois em{" "}
+          <strong>Adicionar à Tela de Início</strong>.{" "}
+          <button type="button" className="text-primary font-semibold underline underline-offset-2" onClick={install}>
+            Ver como
+          </button>
+        </p>
+        <Button type="button" variant="ghost" size="icon-sm" className="shrink-0" aria-label="Agora não" onClick={dismiss}>
+          <X />
+        </Button>
+      </div>
+      {guide}
+    </>
+  );
+}
+
 /** Passo a passo do iPhone/iPad (o Safari não tem botão de instalar programático). */
 function IosGuide({ open, onOpenChange }: { open: boolean; onOpenChange: (v: boolean) => void }) {
   const inApp = typeof navigator !== "undefined" && isInAppBrowser();
